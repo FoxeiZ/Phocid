@@ -85,6 +85,7 @@ import org.sunsetware.phocid.data.sortedBy
 import org.sunsetware.phocid.data.toM3u
 import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.ui.components.EmptyListIndicator
+import org.sunsetware.phocid.ui.components.LifecycleLaunchedEffect
 import org.sunsetware.phocid.ui.components.SingleLineText
 import org.sunsetware.phocid.ui.components.UtilityCheckBoxListItem
 import org.sunsetware.phocid.ui.theme.Typography
@@ -134,7 +135,7 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
                 playlistIoDirectoryUri?.let { DocumentFile.fromTreeUri(context, it) }
             }
 
-        LaunchedEffect(playlistIoDirectory) {
+        LifecycleLaunchedEffect(playlistIoDirectory) {
             withContext(Dispatchers.IO) {
                 while (isActive) {
                     m3uFiles =
@@ -147,17 +148,14 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
                             }
                             ?.values
                             ?.toList() ?: emptyList()
-                    delay(1.seconds)
+                    delay(5.seconds)
                 }
             }
         }
 
         // Show sync help dialog on first use
         LaunchedEffect(currentTabType) {
-            if (
-                currentTabType == PlaylistIoScreenTabType.Sync &&
-                    !uiManager.playlistIoSyncHelpShown.getAndSet(true)
-            ) {
+            if (currentTabType == PlaylistIoScreenTabType.Sync && uiManager.markPlaylistIoSyncHelpShown()) {
                 uiManager.openDialog(PlaylistIoSyncHelpDialog())
             }
         }
@@ -562,7 +560,9 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
             } + preferences.playlistIoSyncMappings.keys.subtract(playlists.keys).map { it to null }
         var files by remember { mutableStateOf(null as Map<String, SafFile>?) }
 
-        LaunchedEffect(preferences.playlistIoSyncLocation) {
+        LifecycleLaunchedEffect(
+            preferences.playlistIoSyncLocation,
+        ) {
             withContext(Dispatchers.IO) {
                 while (isActive) {
                     files =
@@ -571,7 +571,7 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
                                 it.name.endsWith(".m3u", true) || it.name.endsWith(".m3u8", true)
                             }
                         } ?: emptyMap()
-                    delay(1.seconds)
+                    delay(5.seconds)
                 }
             }
         }

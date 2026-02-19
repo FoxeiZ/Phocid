@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.media3.common.Player
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -55,6 +56,7 @@ import org.sunsetware.phocid.data.Track
 import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.globals.format
 import org.sunsetware.phocid.ui.components.LibraryListItemHorizontal
+import org.sunsetware.phocid.ui.components.LifecycleLaunchedEffect
 import org.sunsetware.phocid.ui.components.OverflowMenu
 import org.sunsetware.phocid.ui.components.ProgressSlider
 import org.sunsetware.phocid.ui.components.SingleLineText
@@ -73,6 +75,8 @@ sealed class PlayerScreenControls {
         currentTrack: Track,
         currentTrackIsFavorite: Boolean,
         isPlaying: Boolean,
+        smoothProgressBarAnimation: Boolean,
+        enableSquigglyProgressBar: Boolean,
         repeat: Int,
         shuffle: Boolean,
         currentPosition: () -> Long,
@@ -231,6 +235,8 @@ class PlayerScreenControlsDefaultBase(
         currentTrack: Track,
         currentTrackIsFavorite: Boolean,
         isPlaying: Boolean,
+        smoothProgressBarAnimation: Boolean,
+        enableSquigglyProgressBar: Boolean,
         repeat: Int,
         shuffle: Boolean,
         currentPosition: () -> Long,
@@ -261,8 +267,18 @@ class PlayerScreenControlsDefaultBase(
         var isDraggingProgressSlider by remember { mutableStateOf(false) }
 
         // Update progress
-        LaunchedEffect(currentTrack) {
-            val frameTime = (1f / context.display.refreshRate).toDouble().milliseconds
+        LifecycleLaunchedEffect(
+            currentTrack,
+            isPlaying,
+            smoothProgressBarAnimation,
+            minActiveState = Lifecycle.State.RESUMED,
+        ) {
+            val frameTime =
+                if (smoothProgressBarAnimation) {
+                    (1f / 60f).toDouble().seconds
+                } else {
+                    1.seconds
+                }
 
             while (isActive) {
                 val currentPosition = currentPosition()
@@ -270,6 +286,9 @@ class PlayerScreenControlsDefaultBase(
                     progress =
                         (currentPosition.toFloat() / (currentTrack.duration.inWholeMilliseconds))
                             .takeIf { !it.isNaN() } ?: 0f
+                }
+                if (!isPlaying) {
+                    break
                 }
                 delay(frameTime)
             }
@@ -323,6 +342,7 @@ class PlayerScreenControlsDefaultBase(
                                     onSeekToFraction(progress)
                                 },
                                 animate = isPlaying && !isDraggingProgressSlider,
+                                squiggly = enableSquigglyProgressBar,
                                 modifier = Modifier.padding(horizontal = 16.dp).weight(1f),
                             )
                             SingleLineText(

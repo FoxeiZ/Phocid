@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -20,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -49,9 +49,9 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
-import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.sunsetware.phocid.TNUM
 import org.sunsetware.phocid.ui.theme.EXIT_DURATION
@@ -215,75 +215,76 @@ inline fun ScrollbarThumb(
     Box(
         modifier =
             Modifier.drawWithContent {
-                    drawContent()
+                drawContent()
+                val (start, end) = thumbRange()
+                drawThumb(width, color, alpha(), start, end)
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
                     val (start, end) = thumbRange()
-                    drawThumb(width, color, alpha(), start, end)
-                }
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(pass = PointerEventPass.Initial)
-                        val (start, end) = thumbRange()
-                        val isXInRange = {
-                            if (layoutDirection == LayoutDirection.Ltr) {
-                                down.position.x >= size.width - SCROLLBAR_INTERACTIVE_WIDTH.toPx()
-                            } else {
-                                down.position.x <= SCROLLBAR_INTERACTIVE_WIDTH.toPx()
-                            }
+                    val isXInRange = {
+                        if (layoutDirection == LayoutDirection.Ltr) {
+                            down.position.x >= size.width - SCROLLBAR_INTERACTIVE_WIDTH.toPx()
+                        } else {
+                            down.position.x <= SCROLLBAR_INTERACTIVE_WIDTH.toPx()
                         }
-                        val isYInRange = {
-                            val relativeY = down.position.y / size.height
-                            relativeY in start..end
-                        }
-                        if (alpha() > 0 && isXInRange() && isYInRange()) {
-                            isThumbDragging = true
-                            onSetIsThumbDragging(true)
-                            val yOffset = start * size.height - down.position.y
-                            down.consume()
-
-                            outer@ while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                for (change in event.changes) {
-                                    change.consume()
-                                    if (!change.pressed) break@outer
-
-                                    val totalItemsCount = totalItemsCount()
-                                    onRequestScrollToItem(
-                                        ((change.position.y + yOffset) / size.height *
-                                                totalItemsCount)
-                                            .roundToIntOrZero()
-                                            .coerceAtMost(totalItemsCount - 1)
-                                            .coerceAtLeast(0)
-                                    )
-                                }
-                            }
-                        }
-                        isThumbDragging = false
-                        onSetIsThumbDragging(false)
                     }
+                    val isYInRange = {
+                        val relativeY = down.position.y / size.height
+                        relativeY in start..end
+                    }
+                    if (alpha() > 0 && isXInRange() && isYInRange()) {
+                        isThumbDragging = true
+                        onSetIsThumbDragging(true)
+                        val yOffset = start * size.height - down.position.y
+                        down.consume()
+
+                        outer@ while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            for (change in event.changes) {
+                                change.consume()
+                                if (!change.pressed) break@outer
+
+                                val totalItemsCount = totalItemsCount()
+                                onRequestScrollToItem(
+                                    ((change.position.y + yOffset) / size.height *
+                                            totalItemsCount)
+                                        .roundToIntOrZero()
+                                        .coerceAtMost(totalItemsCount - 1)
+                                        .coerceAtLeast(0)
+                                )
+                            }
+                        }
+                    }
+                    isThumbDragging = false
+                    onSetIsThumbDragging(false)
                 }
+            }
     ) {
         content()
         Box(
             modifier =
                 Modifier.drawBehind {
-                        val hint = hint()
-                        val hintAlpha =
-                            if (alwaysShowHintOnScroll) alpha() else independentHintAlpha.value
-                        if (hintAlpha > 0 && hint != null) {
-                            drawHint(
-                                textMeasurer,
-                                width,
-                                color,
-                                hintAlpha,
-                                hint,
-                                thumbRange().first,
-                            )
-                        }
+                    val hint = hint()
+                    val hintAlpha =
+                        if (alwaysShowHintOnScroll) alpha() else independentHintAlpha.value
+                    if (hintAlpha > 0 && hint != null) {
+                        drawHint(
+                            textMeasurer,
+                            width,
+                            color,
+                            hintAlpha,
+                            hint,
+                            thumbRange().first,
+                        )
                     }
+                }
                     .fillMaxSize()
         )
     }
 }
+
 
 @Composable
 inline fun Scrollbar(
@@ -293,6 +294,7 @@ inline fun Scrollbar(
     alwaysVisible: Boolean = false,
     width: Dp = SCROLLBAR_DEFAULT_WIDTH,
     color: Color = SCROLLBAR_DEFAULT_COLOR,
+    noinline isThumbDragging: ((Boolean) -> Unit)? = null,
     noinline content: @Composable () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -319,22 +321,22 @@ inline fun Scrollbar(
     val isScrollbarDragging = remember { AtomicBoolean(false) }
 
     val alpha = remember { Animatable(0f) }
-    LaunchedEffect(alwaysVisible) {
+    LifecycleLaunchedEffect(alwaysVisible) {
         if (alwaysVisible) {
             alpha.snapTo(1f)
         } else {
-            // Reading state.isScrollInProgress outside of LaunchedEffect will trigger a recomposition
-            while (isActive) {
-                val isScrolling =
+            snapshotFlow {
                     (thumbRange.first > 0 || thumbRange.second < 1) &&
                         (state.isScrollInProgress || isScrollbarDragging.get())
-                if (alpha.targetValue != 1f && isScrolling) {
-                    coroutineScope.launch { alpha.animateTo(1f, scrollbarEnter) }
-                } else if (alpha.targetValue != 0f && !isScrolling) {
-                    coroutineScope.launch { alpha.animateTo(0f, scrollbarExit) }
                 }
-                delay(17.milliseconds)
-            }
+                .distinctUntilChanged()
+                .collect { isScrolling ->
+                    if (alpha.targetValue != 1f && isScrolling) {
+                        coroutineScope.launch { alpha.animateTo(1f, scrollbarEnter) }
+                    } else if (alpha.targetValue != 0f && !isScrolling) {
+                        coroutineScope.launch { alpha.animateTo(0f, scrollbarExit) }
+                    }
+                }
         }
     }
 
@@ -346,7 +348,10 @@ inline fun Scrollbar(
         { thumbRange },
         { totalItemsCount },
         { state.requestScrollToItem(it) },
-        { isScrollbarDragging.set(it) },
+        {
+            isScrollbarDragging.set(it)
+            isThumbDragging?.invoke(it)
+        },
         {
             state.layoutInfo.visibleItemsInfo
                 .firstOrNull { it.offset > -it.size / 2 }
@@ -365,6 +370,7 @@ inline fun Scrollbar(
     alwaysVisible: Boolean = false,
     width: Dp = SCROLLBAR_DEFAULT_WIDTH,
     color: Color = SCROLLBAR_DEFAULT_COLOR,
+    noinline isThumbDragging: ((Boolean) -> Unit)? = null,
     noinline content: @Composable () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -405,22 +411,22 @@ inline fun Scrollbar(
     val isScrollbarDragging = remember { AtomicBoolean(false) }
 
     val alpha = remember { Animatable(0f) }
-    LaunchedEffect(alwaysVisible) {
+    LifecycleLaunchedEffect(alwaysVisible) {
         if (alwaysVisible) {
             alpha.snapTo(1f)
         } else {
-            // Reading state.isScrollInProgress outside of LaunchedEffect will trigger a recomposition
-            while (isActive) {
-                val isScrolling =
+            snapshotFlow {
                     (thumbRange.first > 0 || thumbRange.second < 1) &&
                         (state.isScrollInProgress || isScrollbarDragging.get())
-                if (alpha.targetValue != 1f && isScrolling) {
-                    coroutineScope.launch { alpha.animateTo(1f, scrollbarEnter) }
-                } else if (alpha.targetValue != 0f && !isScrolling) {
-                    coroutineScope.launch { alpha.animateTo(0f, scrollbarExit) }
                 }
-                delay(17.milliseconds)
-            }
+                .distinctUntilChanged()
+                .collect { isScrolling ->
+                    if (alpha.targetValue != 1f && isScrolling) {
+                        coroutineScope.launch { alpha.animateTo(1f, scrollbarEnter) }
+                    } else if (alpha.targetValue != 0f && !isScrolling) {
+                        coroutineScope.launch { alpha.animateTo(0f, scrollbarExit) }
+                    }
+                }
         }
     }
 
@@ -432,7 +438,10 @@ inline fun Scrollbar(
         { thumbRange },
         { totalItemsCount },
         { state.requestScrollToItem(it) },
-        { isScrollbarDragging.set(it) },
+        {
+            isScrollbarDragging.set(it)
+            isThumbDragging?.invoke(it)
+        },
         {
             state.layoutInfo.visibleItemsInfo
                 .firstOrNull { it.offset.y > -it.size.height / 2 }
