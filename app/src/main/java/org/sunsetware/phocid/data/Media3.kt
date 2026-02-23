@@ -12,7 +12,6 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.serialization.Serializable
@@ -38,22 +37,31 @@ data class PlayerState(
     val pitch: Float = 1f,
 )
 
-@Immutable data class PlayerTransientState(val version: Long = -1, val isPlaying: Boolean = false)
+@Immutable data class PlayerTransientState(val isPlaying: Boolean = false)
 
 /** This method should work even if values of [UNSHUFFLED_INDEX_KEY] are discontinuous. */
 fun Player.capturePlayerState(): PlayerState {
-    val mediaItems = (0..<mediaItemCount).map { getMediaItemAt(it) }
-    fun getUnshuffledPlayQueueMapping(): List<Int> {
-        return mediaItems
-            .mapIndexedNotNull { index, mediaItem ->
-                mediaItem.getUnshuffledIndex()?.let { Pair(index, it) }
+    val actualPlayQueue = ArrayList<Long>(mediaItemCount)
+    val mappingTemp = if (shuffleModeEnabled) ArrayList<Pair<Int, Int>>(mediaItemCount) else null
+
+    for (i in 0 until mediaItemCount) {
+        val item = getMediaItemAt(i)
+        actualPlayQueue.add(item.mediaId.toLong())
+
+        if (shuffleModeEnabled) {
+            val unshuffledIdx = item.getUnshuffledIndex()
+            if (unshuffledIdx >= 0) {
+                mappingTemp?.add(Pair(i, unshuffledIdx))
             }
-            .sortedBy { it.second }
-            .map { it.first }
+        }
     }
-    val actualPlayQueue = mediaItems.map { it.mediaId.toLong() }
+
+    val unshuffledMapping = mappingTemp
+        ?.apply { sortBy { it.second } }
+        ?.map { it.first }
+
     return PlayerState(
-        if (shuffleModeEnabled) getUnshuffledPlayQueueMapping() else null,
+        unshuffledMapping,
         actualPlayQueue,
         currentMediaItemIndex,
         if (isPlaying) 0 else currentPosition,
@@ -79,11 +87,8 @@ fun Player.restorePlayerState(state: PlayerState, unfilteredTrackIndex: Unfilter
     playbackParameters = PlaybackParameters(state.speed, state.pitch)
 }
 
-private val transientStateVersion = AtomicLong(0)
-
 fun Player.captureTransientState(): PlayerTransientState {
     return PlayerTransientState(
-        transientStateVersion.getAndIncrement(),
         playWhenReady && playbackState != Player.STATE_ENDED,
     )
 }
@@ -431,8 +436,8 @@ fun getChildMediaItems(
     }
 }
 
-fun MediaItem.getUnshuffledIndex(): Int? {
-    return mediaMetadata.extras?.getInt(UNSHUFFLED_INDEX_KEY, -1)?.takeIf { it >= 0 }
+fun MediaItem.getUnshuffledIndex(): Int {
+    return mediaMetadata.extras?.getInt(UNSHUFFLED_INDEX_KEY, -1) ?: -1
 }
 
 fun MediaItem.setUnshuffledIndex(unshuffledIndex: Int?): MediaItem {

@@ -84,34 +84,33 @@ class CustomizedPlayer(val inner: ExoPlayer) : ForwardingPlayer(inner) {
         val currentIndex = currentMediaItemIndex
         val itemCount = mediaItemCount
         val unshuffledIndex = currentMediaItem!!.getUnshuffledIndex()
-        if (unshuffledIndex == null) {
+        if (unshuffledIndex == -1) {
             Log.e("Phocid", "Current track has no unshuffled index when disabling shuffle")
             replaceMediaItems(
                 0,
                 itemCount,
-                (0..<itemCount).map { getMediaItemAt(it).setUnshuffledIndex(null) },
+                (0..<itemCount).map { getMediaItemAt(it).setUnshuffledIndex(null) }
             )
         } else {
-            val unshuffledPlayQueue =
-                (0..<itemCount)
-                    .map { getMediaItemAt(it) }
-                    .mapNotNull { mediaItem ->
-                        mediaItem.getUnshuffledIndex()?.let { Pair(mediaItem, it) }
-                    }
-                    .sortedBy { it.second }
-                    .map { it.first }
+            val unshuffledPlayQueue = (0..<itemCount)
+                .map { getMediaItemAt(it) }
+                .filter { it.getUnshuffledIndex() != -1 }
+                .sortedBy { it.getUnshuffledIndex() }
+
             replaceMediaItem(currentIndex, currentMediaItem!!.setUnshuffledIndex(null))
             replaceMediaItems(
                 currentIndex + 1,
                 itemCount,
                 unshuffledPlayQueue.subList(unshuffledIndex + 1, unshuffledPlayQueue.size).map {
                     it.setUnshuffledIndex(null)
-                },
+                }
             )
             replaceMediaItems(
                 0,
                 currentIndex,
-                unshuffledPlayQueue.subList(0, unshuffledIndex).map { it.setUnshuffledIndex(null) },
+                unshuffledPlayQueue.subList(0, unshuffledIndex).map {
+                    it.setUnshuffledIndex(null)
+                }
             )
         }
     }

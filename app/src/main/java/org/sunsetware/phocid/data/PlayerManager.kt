@@ -34,10 +34,11 @@ import kotlin.coroutines.resumeWithException
 @Stable
 class PlayerManager(
     val state: StateFlow<PlayerState>,
-    private val _transientState: MutableStateFlow<PlayerTransientState>,
+    transientState: MutableStateFlow<PlayerTransientState>,
 ) : AutoCloseable {
     private lateinit var mediaController: MediaController
-    val transientState = _transientState.asStateFlow()
+    val transientStateFlow = transientState.asStateFlow()
+    val seekVersion = MutableStateFlow(0L)
 
     val currentPosition: Long
         get() = mediaController.currentPosition
@@ -70,10 +71,6 @@ class PlayerManager(
         }
     }
 
-    private fun updateTransientState() {
-        _transientState.update { mediaController.captureTransientState() }
-    }
-
     fun seekToPrevious() {
         val currentIndex = mediaController.currentMediaItemIndex
         val previousIndex =
@@ -82,8 +79,7 @@ class PlayerManager(
                 mediaController.repeatMode != Player.REPEAT_MODE_OFF,
             ) ?: currentIndex
         mediaController.seekTo(previousIndex, 0)
-        // Force a state emission for UI recomposition.
-        updateTransientState()
+        seekVersion.update { it + 1L }
         mediaController.play()
     }
 
@@ -99,8 +95,7 @@ class PlayerManager(
                     mediaController.currentPosition <= mediaController.maxSeekToPreviousPosition
                 } ?: currentIndex
         mediaController.seekTo(previousIndex, 0)
-        // Force a state emission for UI recomposition.
-        updateTransientState()
+        seekVersion.update { it + 1L }
         mediaController.play()
     }
 
@@ -112,8 +107,7 @@ class PlayerManager(
                 mediaController.repeatMode != Player.REPEAT_MODE_OFF,
             ) ?: currentIndex
         mediaController.seekTo(nextIndex, 0)
-        // Force a state emission for UI recomposition.
-        updateTransientState()
+        seekVersion.update { it + 1L }
         mediaController.play()
     }
 
@@ -207,15 +201,12 @@ class PlayerManager(
                             mediaController.getMediaItemAt(it)
                         }
                     val currentIndex = mediaController.currentMediaItemIndex
-                    val currentUnshuffledIndex = mediaItems[currentIndex].getUnshuffledIndex()!!
-                    val offsetOriginal =
-                        mediaItems.map {
-                            it.setUnshuffledIndex(
-                                it.getUnshuffledIndex()!!.let {
-                                    if (it > currentUnshuffledIndex) it + tracks.size else it
-                                }
-                            )
-                        }
+                    val currentUnshuffledIndex = mediaItems[currentIndex].getUnshuffledIndex()
+                    val offsetOriginal = mediaItems.map { item ->
+                        val idx = item.getUnshuffledIndex()
+                        val newIdx = if (idx != -1 && idx > currentUnshuffledIndex) idx + tracks.size else idx
+                        item.setUnshuffledIndex(if (newIdx != -1) newIdx else null)
+                    }
                     val new =
                         tracks.mapIndexed { i, track ->
                             track.getMediaItem(currentUnshuffledIndex + 1 + i)
