@@ -101,7 +101,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -819,12 +818,11 @@ private fun BottomBar(
             .runningReduce(coroutineScope) { last, current -> current ?: last }
             .collectAsStateWithLifecycle()
     val isPlaying by
-        playerManager.transientState
+        playerManager.transientStateFlow
             .map(coroutineScope) { it.isPlaying }
             .collectAsStateWithLifecycle()
-    val playerTransientStateVersion by
-        playerManager.transientState
-            .map(coroutineScope) { it.version }
+    val seekVersion by
+        playerManager.seekVersion
             .collectAsStateWithLifecycle()
 
     val animatedThemeAccent = animateColorAsState(LocalThemeAccent.current)
@@ -898,7 +896,7 @@ private fun BottomBar(
                     actions = {
                         TrackCarousel(
                             state = playerState,
-                            key = playerTransientStateVersion,
+                            key = seekVersion,
                             swipeThreshold = swipeThreshold,
                             countSelector = { it.actualPlayQueue.size },
                             indexSelector = { it.currentIndex },

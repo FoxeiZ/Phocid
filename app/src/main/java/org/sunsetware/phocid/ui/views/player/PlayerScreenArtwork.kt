@@ -29,7 +29,7 @@ import org.sunsetware.phocid.ui.components.TrackCarousel
 sealed class PlayerScreenArtwork {
     @Composable
     abstract fun Compose(
-        playerTransientStateVersion: Long,
+        seekVersion: Long,
         carouselArtworkCache: ArtworkCache,
         swipeThreshold: Dp,
         highResArtworkPreference: HighResArtworkPreference,
@@ -48,7 +48,7 @@ sealed class PlayerScreenArtwork {
 object PlayerScreenArtworkDefault : PlayerScreenArtwork() {
     @Composable
     override fun Compose(
-        playerTransientStateVersion: Long,
+        seekVersion: Long,
         carouselArtworkCache: ArtworkCache,
         swipeThreshold: Dp,
         highResArtworkPreference: HighResArtworkPreference,
@@ -64,7 +64,7 @@ object PlayerScreenArtworkDefault : PlayerScreenArtwork() {
         val density = LocalDensity.current
         TrackCarousel(
             state = playerState,
-            key = playerTransientStateVersion,
+            key = seekVersion,
             swipeThreshold = swipeThreshold,
             countSelector = { it.actualPlayQueue.size },
             indexSelector = { it.currentIndex },

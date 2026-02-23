@@ -57,11 +57,8 @@ import kotlinx.serialization.Serializable
 import org.sunsetware.phocid.DEFAULT_SWIPE_THRESHOLD
 import org.sunsetware.phocid.MainViewModel
 import org.sunsetware.phocid.R
-import org.sunsetware.phocid.UiManager
 import org.sunsetware.phocid.data.InvalidTrack
 import org.sunsetware.phocid.data.Lyrics
-import org.sunsetware.phocid.data.PlayerManager
-import org.sunsetware.phocid.data.Track
 import org.sunsetware.phocid.data.getArtworkColor
 import org.sunsetware.phocid.data.isFavorite
 import org.sunsetware.phocid.data.loadLyrics
@@ -90,9 +87,8 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
     val libraryIndex by viewModel.libraryIndex.collectAsStateWithLifecycle()
 
     val playerState by playerManager.state.collectAsStateWithLifecycle()
-    val playerTransientStateVersion by
-        playerManager.transientState
-            .map(coroutineScope) { it.version }
+    val seekVersion by
+        playerManager.seekVersion
             .collectAsStateWithLifecycle()
     val playQueue by
         playerManager.state
@@ -149,7 +145,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
             }
         }
     val isPlaying by
-        playerManager.transientState
+        playerManager.transientStateFlow
             .map(coroutineScope) { it.isPlaying }
             .collectAsStateWithLifecycle()
     val repeat by
@@ -443,7 +439,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                         }
                         Box {
                             uiState.components.artwork.Compose(
-                                playerTransientStateVersion = playerTransientStateVersion,
+                                seekVersion = seekVersion,
                                 carouselArtworkCache = viewModel.carouselArtworkCache,
                                 swipeThreshold =
                                     DEFAULT_SWIPE_THRESHOLD * preferences.swipeThresholdMultiplier,
