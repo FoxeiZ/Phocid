@@ -183,16 +183,28 @@ class PlaybackService : MediaLibraryService() {
             }
 
             override fun onEvents(player: Player, events: Player.Events) {
-                GlobalData.playerState.update { player.capturePlayerState() }
-                GlobalData.playerTransientState.update { player.captureTransientState() }
+                if (
+                    events.containsAny(
+                        Player.EVENT_TIMELINE_CHANGED,
+                        Player.EVENT_MEDIA_ITEM_TRANSITION,
+                        Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED,
+                        Player.EVENT_REPEAT_MODE_CHANGED,
+                    )
+                ) {
+                    GlobalData.playerState.update { player.capturePlayerState() }
+                }
 
                 if (
                     events.containsAny(
                         Player.EVENT_IS_PLAYING_CHANGED,
-                        Player.EVENT_MEDIA_ITEM_TRANSITION,
-                        Player.EVENT_REPEAT_MODE_CHANGED,
+                        Player.EVENT_PLAYBACK_STATE_CHANGED,
+                        Player.EVENT_POSITION_DISCONTINUITY,
                     )
                 ) {
+                    GlobalData.playerTransientState.update { player.captureTransientState() }
+                }
+
+                if (events.contains(Player.EVENT_AVAILABLE_COMMANDS_CHANGED)) {
                     mediaSession?.setMediaButtonPreferences(commandButtons(player))
                 }
 
