@@ -1,0 +1,73 @@
+name: Pre-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name / tag (e.g. 20251206)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes shown on the GitHub release page'
+        required: false
+        type: string
+        default: 'Pre-release build — may be unstable.'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pre-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Build & Publish Pre-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APKs (armeabi-v7a + arm64-v8a)
+        run: ./gradlew assembleDebug
+
+      - name: Build release APKs (armeabi-v7a + arm64-v8a)
+        run: ./gradlew assembleRelease
+
+      - name: Rename APKs with version tag
+        env:
+          VERSION: ${{ inputs.version_name }}
+        run: |
+          for dir in debug release; do
+            for apk in app/build/outputs/apk/$dir/*.apk; do
+              [ -f "$apk" ] || continue
+              base=$(basename "$apk" .apk)
+              mv "$apk" "app/build/outputs/apk/$dir/${base}-${VERSION}.apk"
+            done
+          done
+          echo "=== APKs to be published ==="
+          find app/build/outputs/apk -name '*.apk' | sort
+
+      - name: Create GitHub Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version_name }}
+          name: v${{ inputs.version_name }} (Pre-release)
+          body: ${{ inputs.release_notes }}
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk

@@ -32,11 +32,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("debug").apply {
-                // Disable v2 signing and force enable v3 signing for modern Android (9+)
-                enableV2Signing = false
-                enableV3Signing = true
-            }
+            signingConfig =
+                signingConfigs.getByName("debug").apply {
+                    // Disable v2 signing and force enable v3 signing for modern Android (9+)
+                    enableV2Signing = false
+                    enableV3Signing = true
+                }
         }
     }
     compileOptions {
@@ -56,13 +57,20 @@ android {
     }
     @Suppress("UnstableApiUsage")
     androidResources.generateLocaleConfig = true
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = false
+        }
+    }
 }
 
 kotlin {
     jvmToolchain(21)
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_21
-    }
+    compilerOptions { jvmTarget = JvmTarget.JVM_21 }
 }
 
 dependencies {
