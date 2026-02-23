@@ -31,9 +31,7 @@ class ClearHistoryDialog : Dialog() {
     override fun Compose(viewModel: MainViewModel) {
         val historyEntries by viewModel.historyEntries.collectAsStateWithLifecycle()
         val ranges = remember { HistoryClearRange.entries }
-        val rangeLabels = remember {
-            ranges.map { Strings[it.stringId] }
-        }
+        val rangeLabels = remember { ranges.map { Strings[it.stringId] } }
         var activeRangeIndex by rememberSaveable { mutableIntStateOf(0) }
         val activeRange = ranges[activeRangeIndex]
         val now = System.currentTimeMillis()

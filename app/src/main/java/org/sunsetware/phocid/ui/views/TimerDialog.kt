@@ -54,10 +54,7 @@ class TimerDialog : Dialog() {
         var activeTimerFinishLastTrack by remember { mutableStateOf(true) }
         val maxDurationMinutes = 60
 
-        LifecycleLaunchedEffect(
-            Unit,
-            minActiveState = Lifecycle.State.RESUMED,
-        ) {
+        LifecycleLaunchedEffect(Unit, minActiveState = Lifecycle.State.RESUMED) {
             while (isActive) {
                 val state = playerManager.getTimerState()
                 isTimerActive = state != null

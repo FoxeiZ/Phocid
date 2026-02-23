@@ -44,9 +44,7 @@ inline fun <T> SwipeToDismiss(
     val layoutDirection = LocalLayoutDirection.current
     val offset = remember { Animatable(0f) }
 
-    val directionSign = {
-        if (layoutDirection == LayoutDirection.Ltr) 1f else -1f
-    }
+    val directionSign = { if (layoutDirection == LayoutDirection.Ltr) 1f else -1f }
     val isDirectionAllowed = { value: Float ->
         val sign = directionSign()
         when (direction) {
@@ -71,8 +69,9 @@ inline fun <T> SwipeToDismiss(
                                 val positionalThreshold =
                                     updatedSwipeThreshold.roundToPx().coerceAtMost(size.width / 2)
                                 val value = offset.value
-                                if (value.absoluteValue >= positionalThreshold &&
-                                    isDirectionAllowed(value)
+                                if (
+                                    value.absoluteValue >= positionalThreshold &&
+                                        isDirectionAllowed(value)
                                 ) {
                                     coroutineScope.launch(dispatcher) {
                                         offset.animateTo(value.sign * size.width, emphasizedExit())

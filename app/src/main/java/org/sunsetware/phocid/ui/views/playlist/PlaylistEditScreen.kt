@@ -92,7 +92,9 @@ class PlaylistEditScreen(private val playlistKey: UUID) : TopLevelScreen() {
                 keySelector = { it.key },
                 onCommitMove = { from, to ->
                     playlistManager.updatePlaylist(playlistKey) {
-                        it.copy(entries = it.entries.toMutableList().apply { add(to, removeAt(from)) })
+                        it.copy(
+                            entries = it.entries.toMutableList().apply { add(to, removeAt(from)) }
+                        )
                     }
                 },
             )
@@ -269,10 +271,8 @@ class PlaylistEditScreen(private val playlistKey: UUID) : TopLevelScreen() {
                                                 .width(56.dp)
                                                 .height(72.dp)
                                                 .draggableHandle(
-                                                    onDragStarted =
-                                                        reorderController.onDragStarted,
-                                                    onDragStopped =
-                                                        reorderController.onDragStopped,
+                                                    onDragStarted = reorderController.onDragStarted,
+                                                    onDragStopped = reorderController.onDragStopped,
                                                 )
                                     )
                                 }

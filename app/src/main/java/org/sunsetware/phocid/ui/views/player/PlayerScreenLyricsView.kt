@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,10 +84,7 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
         val linePositions = remember { AtomicReference(emptyList<Int>()) }
         var currentLineIndex by remember { mutableStateOf(null as Int?) }
 
-        LifecycleLaunchedEffect(
-            lyrics,
-            minActiveState = Lifecycle.State.RESUMED,
-        ) {
+        LifecycleLaunchedEffect(lyrics, minActiveState = Lifecycle.State.RESUMED) {
             currentLineIndex = null
             if (lyrics is PlayerScreenLyrics.Synced) {
                 while (isActive) {

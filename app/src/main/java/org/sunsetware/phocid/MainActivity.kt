@@ -51,12 +51,12 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import org.apache.commons.io.FilenameUtils
+import org.sunsetware.phocid.data.HistoryStartContext
 import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.PlayerManager
 import org.sunsetware.phocid.data.Preferences
 import org.sunsetware.phocid.data.RealizedPlaylist
 import org.sunsetware.phocid.data.Track
-import org.sunsetware.phocid.data.HistoryStartContext
 import org.sunsetware.phocid.data.getArtworkColor
 import org.sunsetware.phocid.data.sorted
 import org.sunsetware.phocid.globals.Strings

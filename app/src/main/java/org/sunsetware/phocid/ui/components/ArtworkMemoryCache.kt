@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 
-
 object ArtworkMemoryCache {
     private const val TAG = "phocid.ArtworkMemoryCache"
     private val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
@@ -34,11 +33,11 @@ object ArtworkMemoryCache {
 
         val deferred =
             synchronized(lock) {
-                inFlight[requestKey]
-                    ?.also {
-                        Log.i(TAG, "artwork cache wait for in flight: $requestKey")
-                    }
-                    ?: coroutineScope.async {
+                inFlight[requestKey]?.also {
+                    Log.i(TAG, "artwork cache wait for in flight: $requestKey")
+                }
+                    ?: coroutineScope
+                        .async {
                             try {
                                 val loaded = load() ?: return@async null
                                 putLoaded(requestKey, loaded)
@@ -65,10 +64,7 @@ object ArtworkMemoryCache {
             val entrySize = cache.size()
             inFlight.clear()
             cache.evictAll()
-            Log.i(
-                TAG,
-                "cleared in memory, entries=$entrySize, inFlight=$inFlightSize",
-            )
+            Log.i(TAG, "cleared in memory, entries=$entrySize, inFlight=$inFlightSize")
         }
     }
 

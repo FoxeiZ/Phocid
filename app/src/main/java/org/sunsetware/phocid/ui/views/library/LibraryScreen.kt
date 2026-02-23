@@ -111,15 +111,16 @@ import org.sunsetware.phocid.MainViewModel
 import org.sunsetware.phocid.R
 import org.sunsetware.phocid.TNUM
 import org.sunsetware.phocid.data.ArtworkColorPreference
-import org.sunsetware.phocid.data.HistoryStartContext
 import org.sunsetware.phocid.data.HighResArtworkPreference
+import org.sunsetware.phocid.data.HistoryStartContext
 import org.sunsetware.phocid.data.InvalidTrack
 import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.PlayerManager
 import org.sunsetware.phocid.data.SortingOption
-import org.sunsetware.phocid.data.sorted
 import org.sunsetware.phocid.data.albumKey
+import org.sunsetware.phocid.data.sorted
 import org.sunsetware.phocid.globals.Strings
+import org.sunsetware.phocid.ui.components.ActionSnackbar
 import org.sunsetware.phocid.ui.components.AnimatedForwardBackwardTransition
 import org.sunsetware.phocid.ui.components.Artwork
 import org.sunsetware.phocid.ui.components.ArtworkCache
@@ -128,7 +129,6 @@ import org.sunsetware.phocid.ui.components.BinaryDragState
 import org.sunsetware.phocid.ui.components.DragLock
 import org.sunsetware.phocid.ui.components.FloatingToolbar
 import org.sunsetware.phocid.ui.components.IndefiniteSnackbar
-import org.sunsetware.phocid.ui.components.ActionSnackbar
 import org.sunsetware.phocid.ui.components.LibraryListItemHorizontal
 import org.sunsetware.phocid.ui.components.LifecycleLaunchedEffect
 import org.sunsetware.phocid.ui.components.MultiSelectManager
@@ -145,8 +145,8 @@ import org.sunsetware.phocid.ui.theme.contentColor
 import org.sunsetware.phocid.ui.theme.contentColorVariant
 import org.sunsetware.phocid.ui.theme.emphasizedEnter
 import org.sunsetware.phocid.ui.theme.emphasizedExit
-import org.sunsetware.phocid.ui.views.MenuItem
 import org.sunsetware.phocid.ui.views.ClearHistoryDialog
+import org.sunsetware.phocid.ui.views.MenuItem
 import org.sunsetware.phocid.ui.views.collectionMenuItemsWithoutPlay
 import org.sunsetware.phocid.ui.views.playlist.NewPlaylistDialog
 import org.sunsetware.phocid.ui.views.playlist.PlaylistIoScreen
@@ -175,7 +175,7 @@ fun LibraryScreen(
     isObscured: Boolean,
     viewModel: MainViewModel = viewModel(),
 ) {
-//    val context = LocalContext.current
+    //    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val playerManager = viewModel.playerManager
@@ -373,8 +373,7 @@ fun LibraryScreen(
                                 HistoryStartContext.Album(info.album.albumKey)
                             is AlbumSliceCollectionViewInfo ->
                                 HistoryStartContext.Album(info.albumSlice.album.albumKey)
-                            is PlaylistCollectionViewInfo ->
-                                HistoryStartContext.Playlist(info.key)
+                            is PlaylistCollectionViewInfo -> HistoryStartContext.Playlist(info.key)
                             else -> null
                         }
                     playerManager.setTracks(
@@ -450,9 +449,7 @@ fun LibraryScreen(
                 ) {
                     val removedCount = historyUndoEvent!!.removedCount
                     ActionSnackbar(
-                        text =
-                            Strings[R.string.history_clear_snackbar]
-                                .icuFormat(removedCount),
+                        text = Strings[R.string.history_clear_snackbar].icuFormat(removedCount),
                         actionText = Strings[R.string.commons_undo],
                         onAction = {
                             historyUndoVisible = false
@@ -821,9 +818,7 @@ private fun BottomBar(
         playerManager.transientStateFlow
             .map(coroutineScope) { it.isPlaying }
             .collectAsStateWithLifecycle()
-    val seekVersion by
-        playerManager.seekVersion
-            .collectAsStateWithLifecycle()
+    val seekVersion by playerManager.seekVersion.collectAsStateWithLifecycle()
 
     val animatedThemeAccent = animateColorAsState(LocalThemeAccent.current)
 

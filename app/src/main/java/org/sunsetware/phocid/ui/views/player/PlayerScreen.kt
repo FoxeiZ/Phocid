@@ -87,9 +87,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
     val libraryIndex by viewModel.libraryIndex.collectAsStateWithLifecycle()
 
     val playerState by playerManager.state.collectAsStateWithLifecycle()
-    val seekVersion by
-        playerManager.seekVersion
-            .collectAsStateWithLifecycle()
+    val seekVersion by playerManager.seekVersion.collectAsStateWithLifecycle()
     val playQueue by
         playerManager.state
             .combine(coroutineScope, viewModel.libraryIndex) { state, library ->
@@ -485,8 +483,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                 smoothProgressBarAnimation =
                                     preferences.smoothProgressBarAnimation ||
                                         preferences.enableSquigglyProgressBar,
-                                enableSquigglyProgressBar =
-                                    preferences.enableSquigglyProgressBar,
+                                enableSquigglyProgressBar = preferences.enableSquigglyProgressBar,
                                 repeat = repeat,
                                 shuffle = shuffle,
                                 currentPosition = { playerManager.currentPosition },

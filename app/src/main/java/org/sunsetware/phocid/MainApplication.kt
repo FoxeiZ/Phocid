@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.HistoryList
+import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.PlayerState
 import org.sunsetware.phocid.data.PlaylistManager
 import org.sunsetware.phocid.data.Preferences
@@ -139,8 +139,7 @@ class MainApplication : Application() {
         when {
             level >= TRIM_MEMORY_BACKGROUND ->
                 ArtworkMemoryCache.trimToSize(ArtworkMemoryCache.cacheSizeKB / 4)
-            level >= TRIM_MEMORY_UI_HIDDEN ->
-                ArtworkMemoryCache.clear()
+            level >= TRIM_MEMORY_UI_HIDDEN -> ArtworkMemoryCache.clear()
         }
     }
 

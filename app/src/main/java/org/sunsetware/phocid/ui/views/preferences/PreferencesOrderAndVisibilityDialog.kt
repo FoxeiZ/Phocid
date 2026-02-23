@@ -28,8 +28,8 @@ import org.sunsetware.phocid.R
 import org.sunsetware.phocid.data.Preferences
 import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.ui.components.DialogBase
-import org.sunsetware.phocid.ui.components.rememberReorderController
 import org.sunsetware.phocid.ui.components.UtilityCheckBoxListItem
+import org.sunsetware.phocid.ui.components.rememberReorderController
 import org.sunsetware.phocid.utils.swap
 import sh.calvin.reorderable.ReorderableItem
 
@@ -66,9 +66,7 @@ class PreferencesOrderAndVisibilityDialog<T : Any>(
                 itemsIndexed(
                     reorderController.reorderingItems ?: items,
                     { _, (type, _) -> type },
-                ) {
-                    index,
-                    (type, visibility) ->
+                ) { index, (type, visibility) ->
                     ReorderableItem(reorderController.reorderableLazyListState, type) {
                         UtilityCheckBoxListItem(
                             text = itemName(type),
@@ -125,10 +123,8 @@ class PreferencesOrderAndVisibilityDialog<T : Any>(
                                     modifier =
                                         Modifier.padding(horizontal = 12.dp)
                                             .draggableHandle(
-                                                onDragStarted =
-                                                    reorderController.onDragStarted,
-                                                onDragStopped =
-                                                    reorderController.onDragStopped,
+                                                onDragStarted = reorderController.onDragStarted,
+                                                onDragStopped = reorderController.onDragStopped,
                                             ),
                                 )
                             },

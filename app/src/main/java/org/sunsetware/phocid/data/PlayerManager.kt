@@ -14,6 +14,8 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +30,6 @@ import org.sunsetware.phocid.TIMER_TARGET_KEY
 import org.sunsetware.phocid.globals.GlobalData
 import org.sunsetware.phocid.utils.coerceInOrMin
 import org.sunsetware.phocid.utils.wrap
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 @Stable
 class PlayerManager(
@@ -142,11 +142,7 @@ class PlayerManager(
         mediaController.play()
     }
 
-    fun setTracks(
-        tracks: List<Track>,
-        index: Int?,
-        historySource: HistoryStartContext? = null,
-    ) {
+    fun setTracks(tracks: List<Track>, index: Int?, historySource: HistoryStartContext? = null) {
         if (historySource != null && tracks.isNotEmpty()) {
             val timestamp = System.currentTimeMillis()
             GlobalData.historyEntries.update { history ->
@@ -202,11 +198,14 @@ class PlayerManager(
                         }
                     val currentIndex = mediaController.currentMediaItemIndex
                     val currentUnshuffledIndex = mediaItems[currentIndex].getUnshuffledIndex()
-                    val offsetOriginal = mediaItems.map { item ->
-                        val idx = item.getUnshuffledIndex()
-                        val newIdx = if (idx != -1 && idx > currentUnshuffledIndex) idx + tracks.size else idx
-                        item.setUnshuffledIndex(if (newIdx != -1) newIdx else null)
-                    }
+                    val offsetOriginal =
+                        mediaItems.map { item ->
+                            val idx = item.getUnshuffledIndex()
+                            val newIdx =
+                                if (idx != -1 && idx > currentUnshuffledIndex) idx + tracks.size
+                                else idx
+                            item.setUnshuffledIndex(if (newIdx != -1) newIdx else null)
+                        }
                     val new =
                         tracks.mapIndexed { i, track ->
                             track.getMediaItem(currentUnshuffledIndex + 1 + i)

@@ -38,8 +38,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.sunsetware.phocid.R
 import org.sunsetware.phocid.globals.Strings

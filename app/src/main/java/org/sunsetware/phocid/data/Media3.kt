@@ -56,9 +56,7 @@ fun Player.capturePlayerState(): PlayerState {
         }
     }
 
-    val unshuffledMapping = mappingTemp
-        ?.apply { sortBy { it.second } }
-        ?.map { it.first }
+    val unshuffledMapping = mappingTemp?.apply { sortBy { it.second } }?.map { it.first }
 
     return PlayerState(
         unshuffledMapping,
@@ -88,9 +86,7 @@ fun Player.restorePlayerState(state: PlayerState, unfilteredTrackIndex: Unfilter
 }
 
 fun Player.captureTransientState(): PlayerTransientState {
-    return PlayerTransientState(
-        playWhenReady && playbackState != Player.STATE_ENDED,
-    )
+    return PlayerTransientState(playWhenReady && playbackState != Player.STATE_ENDED)
 }
 
 fun transformOnSetTracks(

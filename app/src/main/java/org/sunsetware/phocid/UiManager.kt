@@ -19,20 +19,20 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.PersistentUiState
 import org.sunsetware.phocid.data.PlayerTimerSettings
 import org.sunsetware.phocid.data.PlaylistManager
 import org.sunsetware.phocid.data.Preferences
-import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.SaveManager
 import org.sunsetware.phocid.data.Track
 import org.sunsetware.phocid.data.loadCbor
@@ -187,9 +187,7 @@ class UiManager(
             context,
             coroutineScope,
             snapshotFlow { libraryScreenHomeViewState.pagerState.currentPage }
-                .combine(playerScreenUseLyricsView) { page, useLyrics ->
-                    Pair(page, useLyrics)
-                }
+                .combine(playerScreenUseLyricsView) { page, useLyrics -> Pair(page, useLyrics) }
                 .combine(playerScreenUseCountdown) { previous, useCountdown ->
                     Triple(previous.first, previous.second, useCountdown)
                 }

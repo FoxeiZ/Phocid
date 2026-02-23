@@ -739,9 +739,7 @@ private val NowPlaying =
                 icon = Icons.Filled.Swipe,
                 options = SwipeDirectionPreference.entries,
                 value = { it.swipeToRemoveDirection },
-                onSetValue = { preferences, new ->
-                    preferences.copy(swipeToRemoveDirection = new)
-                },
+                onSetValue = { preferences, new -> preferences.copy(swipeToRemoveDirection = new) },
             ),
             Item.SingleChoice(
                 title = { Strings[R.string.preferences_queue_density] },
@@ -754,8 +752,7 @@ private val NowPlaying =
             Item.Toggle(
                 title = { Strings[R.string.preferences_smooth_progress_bar_animation] },
                 subtitle = {
-                    if (it)
-                        Strings[R.string.preferences_enable_squiggly_progress_bar_subtitle]
+                    if (it) Strings[R.string.preferences_enable_squiggly_progress_bar_subtitle]
                     else Strings[R.string.preferences_smooth_progress_bar_animation_subtitle]
                 },
                 icon = Icons.Filled.StackedBarChart,
@@ -937,9 +934,7 @@ private val Radio =
                 min = 10f,
                 max = 200f,
                 steps = 200 - 10 - 1,
-                onSetValue = { preferences, new ->
-                    preferences.copy(radioBatchSize = new.toInt())
-                },
+                onSetValue = { preferences, new -> preferences.copy(radioBatchSize = new.toInt()) },
             ),
         ),
     )

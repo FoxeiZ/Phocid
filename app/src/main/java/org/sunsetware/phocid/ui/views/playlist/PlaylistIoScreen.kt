@@ -155,7 +155,10 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
 
         // Show sync help dialog on first use
         LaunchedEffect(currentTabType) {
-            if (currentTabType == PlaylistIoScreenTabType.Sync && uiManager.markPlaylistIoSyncHelpShown()) {
+            if (
+                currentTabType == PlaylistIoScreenTabType.Sync &&
+                    uiManager.markPlaylistIoSyncHelpShown()
+            ) {
                 uiManager.openDialog(PlaylistIoSyncHelpDialog())
             }
         }
@@ -560,9 +563,7 @@ private constructor(tabType: PlaylistIoScreenTabType, initialExportSelection: Se
             } + preferences.playlistIoSyncMappings.keys.subtract(playlists.keys).map { it to null }
         var files by remember { mutableStateOf(null as Map<String, SafFile>?) }
 
-        LifecycleLaunchedEffect(
-            preferences.playlistIoSyncLocation,
-        ) {
+        LifecycleLaunchedEffect(preferences.playlistIoSyncLocation) {
             withContext(Dispatchers.IO) {
                 while (isActive) {
                     files =

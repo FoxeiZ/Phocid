@@ -17,17 +17,11 @@ sealed class HistoryEntry {
 
 @Serializable
 @SerialName("track")
-data class TrackHistoryEntry(
-    val trackId: Long,
-    override val timestamp: Long,
-) : HistoryEntry()
+data class TrackHistoryEntry(val trackId: Long, override val timestamp: Long) : HistoryEntry()
 
 @Serializable
 @SerialName("album")
-data class AlbumHistoryEntry(
-    val albumKey: String,
-    override val timestamp: Long,
-) : HistoryEntry()
+data class AlbumHistoryEntry(val albumKey: String, override val timestamp: Long) : HistoryEntry()
 
 @Serializable
 @SerialName("playlist")
@@ -38,6 +32,7 @@ data class PlaylistHistoryEntry(
 
 sealed class HistoryStartContext {
     data class Album(val albumKey: AlbumKey) : HistoryStartContext()
+
     data class Playlist(val playlistKey: UUID) : HistoryStartContext()
 }
 
@@ -51,7 +46,10 @@ fun HistoryClearRange.cutoffMillis(now: Long): Long? {
     return durationMs?.let { now - it }
 }
 
-fun HistoryList.appendEntry(entry: HistoryEntry, maxEntries: Int = HISTORY_MAX_ENTRIES): HistoryList {
+fun HistoryList.appendEntry(
+    entry: HistoryEntry,
+    maxEntries: Int = HISTORY_MAX_ENTRIES,
+): HistoryList {
     val updated = this + entry
     return if (updated.size <= maxEntries) updated else updated.takeLast(maxEntries)
 }

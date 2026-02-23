@@ -49,8 +49,6 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.sunsetware.phocid.TNUM
@@ -215,76 +213,75 @@ inline fun ScrollbarThumb(
     Box(
         modifier =
             Modifier.drawWithContent {
-                drawContent()
-                val (start, end) = thumbRange()
-                drawThumb(width, color, alpha(), start, end)
-            }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                    drawContent()
                     val (start, end) = thumbRange()
-                    val isXInRange = {
-                        if (layoutDirection == LayoutDirection.Ltr) {
-                            down.position.x >= size.width - SCROLLBAR_INTERACTIVE_WIDTH.toPx()
-                        } else {
-                            down.position.x <= SCROLLBAR_INTERACTIVE_WIDTH.toPx()
-                        }
-                    }
-                    val isYInRange = {
-                        val relativeY = down.position.y / size.height
-                        relativeY in start..end
-                    }
-                    if (alpha() > 0 && isXInRange() && isYInRange()) {
-                        isThumbDragging = true
-                        onSetIsThumbDragging(true)
-                        val yOffset = start * size.height - down.position.y
-                        down.consume()
-
-                        outer@ while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            for (change in event.changes) {
-                                change.consume()
-                                if (!change.pressed) break@outer
-
-                                val totalItemsCount = totalItemsCount()
-                                onRequestScrollToItem(
-                                    ((change.position.y + yOffset) / size.height *
-                                            totalItemsCount)
-                                        .roundToIntOrZero()
-                                        .coerceAtMost(totalItemsCount - 1)
-                                        .coerceAtLeast(0)
-                                )
+                    drawThumb(width, color, alpha(), start, end)
+                }
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                        val (start, end) = thumbRange()
+                        val isXInRange = {
+                            if (layoutDirection == LayoutDirection.Ltr) {
+                                down.position.x >= size.width - SCROLLBAR_INTERACTIVE_WIDTH.toPx()
+                            } else {
+                                down.position.x <= SCROLLBAR_INTERACTIVE_WIDTH.toPx()
                             }
                         }
+                        val isYInRange = {
+                            val relativeY = down.position.y / size.height
+                            relativeY in start..end
+                        }
+                        if (alpha() > 0 && isXInRange() && isYInRange()) {
+                            isThumbDragging = true
+                            onSetIsThumbDragging(true)
+                            val yOffset = start * size.height - down.position.y
+                            down.consume()
+
+                            outer@ while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                for (change in event.changes) {
+                                    change.consume()
+                                    if (!change.pressed) break@outer
+
+                                    val totalItemsCount = totalItemsCount()
+                                    onRequestScrollToItem(
+                                        ((change.position.y + yOffset) / size.height *
+                                                totalItemsCount)
+                                            .roundToIntOrZero()
+                                            .coerceAtMost(totalItemsCount - 1)
+                                            .coerceAtLeast(0)
+                                    )
+                                }
+                            }
+                        }
+                        isThumbDragging = false
+                        onSetIsThumbDragging(false)
                     }
-                    isThumbDragging = false
-                    onSetIsThumbDragging(false)
                 }
-            }
     ) {
         content()
         Box(
             modifier =
                 Modifier.drawBehind {
-                    val hint = hint()
-                    val hintAlpha =
-                        if (alwaysShowHintOnScroll) alpha() else independentHintAlpha.value
-                    if (hintAlpha > 0 && hint != null) {
-                        drawHint(
-                            textMeasurer,
-                            width,
-                            color,
-                            hintAlpha,
-                            hint,
-                            thumbRange().first,
-                        )
+                        val hint = hint()
+                        val hintAlpha =
+                            if (alwaysShowHintOnScroll) alpha() else independentHintAlpha.value
+                        if (hintAlpha > 0 && hint != null) {
+                            drawHint(
+                                textMeasurer,
+                                width,
+                                color,
+                                hintAlpha,
+                                hint,
+                                thumbRange().first,
+                            )
+                        }
                     }
-                }
                     .fillMaxSize()
         )
     }
 }
-
 
 @Composable
 inline fun Scrollbar(

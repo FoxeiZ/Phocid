@@ -3,8 +3,8 @@ package org.sunsetware.phocid.globals
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.HistoryList
+import org.sunsetware.phocid.data.LibraryIndex
 import org.sunsetware.phocid.data.PlayerState
 import org.sunsetware.phocid.data.PlayerTransientState
 import org.sunsetware.phocid.data.PlaylistManager

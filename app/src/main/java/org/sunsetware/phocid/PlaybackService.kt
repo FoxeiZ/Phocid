@@ -268,8 +268,7 @@ class PlaybackService : MediaLibraryService() {
                 if (seedTrackId != null) {
                     val preferences = GlobalData.preferences.value
                     if (preferences.radioInfiniteMode) {
-                        val remaining =
-                            player.mediaItemCount - player.currentMediaItemIndex
+                        val remaining = player.mediaItemCount - player.currentMediaItemIndex
                         if (remaining <= 3) {
                             val libraryIndex = GlobalData.libraryIndex.value
                             val seedTrack = libraryIndex.tracks[seedTrackId]
@@ -283,9 +282,7 @@ class PlaybackService : MediaLibraryService() {
                                         preferences.radioMixRatio,
                                         preferences.radioBatchSize,
                                     )
-                                player.addMediaItems(
-                                    newTracks.map { it.getMediaItem(null) }
-                                )
+                                player.addMediaItems(newTracks.map { it.getMediaItem(null) })
                             }
                         }
                     }
@@ -311,8 +308,7 @@ class PlaybackService : MediaLibraryService() {
                             oldIndex in 0..<player.mediaItemCount &&
                             oldPosition.positionMs > 0
                     ) {
-                        val trackId =
-                            player.getMediaItemAt(oldIndex).mediaId.toLongOrNull()
+                        val trackId = player.getMediaItemAt(oldIndex).mediaId.toLongOrNull()
                         if (trackId != null) {
                             recordHistoryIfEligible(trackId, oldPosition.positionMs)
                         }
@@ -322,8 +318,7 @@ class PlaybackService : MediaLibraryService() {
                             oldIndex != C.INDEX_UNSET &&
                             oldIndex in 0..<player.mediaItemCount
                     ) {
-                        val trackId =
-                            player.getMediaItemAt(oldIndex).mediaId.toLongOrNull()
+                        val trackId = player.getMediaItemAt(oldIndex).mediaId.toLongOrNull()
                         lastTransitionTrackId = trackId
                         lastTransitionPositionMs = oldPosition.positionMs
                     } else {

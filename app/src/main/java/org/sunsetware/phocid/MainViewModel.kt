@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -17,22 +18,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
+import org.sunsetware.phocid.data.HistoryClearRange
+import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.Lyrics
 import org.sunsetware.phocid.data.PlayerManager
 import org.sunsetware.phocid.data.Preferences
-import org.sunsetware.phocid.data.HistoryClearRange
-import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.cutoffMillis
 import org.sunsetware.phocid.data.scanTracks
 import org.sunsetware.phocid.globals.GlobalData
 import org.sunsetware.phocid.ui.components.ArtworkCache
 import org.sunsetware.phocid.ui.views.library.LibraryScreenTabInfo
-import kotlin.coroutines.resume
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 class MainViewModel(private val application: Application) : AndroidViewModel(application) {
     private val _initialized = MutableStateFlow(false)
@@ -217,7 +217,4 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     }
 }
 
-data class HistoryUndoEvent(
-    val previousEntries: HistoryList,
-    val removedCount: Int,
-)
+data class HistoryUndoEvent(val previousEntries: HistoryList, val removedCount: Int)

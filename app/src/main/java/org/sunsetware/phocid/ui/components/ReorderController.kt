@@ -67,5 +67,10 @@ fun <T, K> rememberReorderController(
         reorderingItems = null
     }
 
-    return ReorderController(reorderableLazyListState, reorderingItems, onDragStarted, onDragStopped)
+    return ReorderController(
+        reorderableLazyListState,
+        reorderingItems,
+        onDragStarted,
+        onDragStopped,
+    )
 }

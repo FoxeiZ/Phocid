@@ -78,11 +78,7 @@ object PlayerScreenLyricsOverlayDefault : PlayerScreenLyricsOverlay() {
         var visibility by remember { mutableStateOf(false) }
         val alpha = animateFloatAsState(if (visibility) 1f else 0f)
 
-        LifecycleLaunchedEffect(
-            lyrics,
-            preferences,
-            minActiveState = Lifecycle.State.RESUMED,
-        ) {
+        LifecycleLaunchedEffect(lyrics, preferences, minActiveState = Lifecycle.State.RESUMED) {
             if (lyrics != null && preferences.lyricsDisplay != LyricsDisplayPreference.DISABLED) {
                 while (isActive) {
                     currentLineIndex = getLineIndex()
@@ -109,21 +105,18 @@ object PlayerScreenLyricsOverlayDefault : PlayerScreenLyricsOverlay() {
         val density = LocalDensity.current
         CompositionLocalProvider(
             LocalDensity provides
-                Density(density.density, density.fontScale * preferences.lyricsSizeMultiplier),
+                Density(density.density, density.fontScale * preferences.lyricsSizeMultiplier)
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(overlayVisibility),
+                modifier = Modifier.fillMaxSize().alpha(overlayVisibility),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Box(
                     modifier =
-                        Modifier
-                            .alpha(alpha.value)
+                        Modifier.alpha(alpha.value)
                             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                             .background(containerColor, RoundedCornerShape(4.dp))
-                            .padding(8.dp),
+                            .padding(8.dp)
                 ) {
                     when (preferences.lyricsDisplay) {
                         LyricsDisplayPreference.DISABLED -> {}

@@ -21,11 +21,7 @@ import androidx.compose.ui.unit.dp
 import org.sunsetware.phocid.ui.theme.Typography
 
 @Composable
-fun ActionSnackbar(
-    text: String,
-    actionText: String,
-    onAction: () -> Unit,
-) {
+fun ActionSnackbar(text: String, actionText: String, onAction: () -> Unit) {
     ElevatedCard(
         modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(48.dp),
         shape = RoundedCornerShape(4.dp),

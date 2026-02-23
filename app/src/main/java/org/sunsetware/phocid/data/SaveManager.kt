@@ -32,21 +32,17 @@ class SaveManager<T : Any>(
     private val job =
         coroutineScope.launch {
             var lastSavedVersion = 0
-            flow
-                .withIndex()
-                .conflate()
-                .cancellable()
-                .collect { (version, value) ->
-                    if (lastSavedVersion < version) {
-                        if (
-                            withContext(Dispatchers.IO) {
-                                saveCbor(kType, context, fileName, isCache, value)
-                            }
-                        ) {
-                            lastSavedVersion = version
+            flow.withIndex().conflate().cancellable().collect { (version, value) ->
+                if (lastSavedVersion < version) {
+                    if (
+                        withContext(Dispatchers.IO) {
+                            saveCbor(kType, context, fileName, isCache, value)
                         }
+                    ) {
+                        lastSavedVersion = version
                     }
                 }
+            }
         }
 
     override fun close() {

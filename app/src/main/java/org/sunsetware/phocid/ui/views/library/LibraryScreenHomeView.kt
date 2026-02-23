@@ -80,8 +80,8 @@ import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.HistoryStartContext
 import org.sunsetware.phocid.data.InvalidTrack
 import org.sunsetware.phocid.data.LibraryIndex
-import org.sunsetware.phocid.data.PlaylistManager
 import org.sunsetware.phocid.data.PlaylistHistoryEntry
+import org.sunsetware.phocid.data.PlaylistManager
 import org.sunsetware.phocid.data.Preferences
 import org.sunsetware.phocid.data.RealizedPlaylist
 import org.sunsetware.phocid.data.SortingOption
@@ -657,14 +657,13 @@ class LibraryScreenHomeViewState(
                 },
             ) { viewModel, onOpenMenu ->
                 if (track != null) {
-                    viewModel.preferences.value.libraryTrackClickAction
-                        .invokeOrOpenMenu(
-                            listOf(track),
-                            0,
-                            viewModel.playerManager,
-                            viewModel.uiManager,
-                            onOpenMenu = onOpenMenu,
-                        )
+                    viewModel.preferences.value.libraryTrackClickAction.invokeOrOpenMenu(
+                        listOf(track),
+                        0,
+                        viewModel.playerManager,
+                        viewModel.uiManager,
+                        onOpenMenu = onOpenMenu,
+                    )
                 }
             }
         }
@@ -759,10 +758,7 @@ class LibraryScreenHomeViewState(
                                 if (playlist == null) emptyList()
                                 else
                                     collectionMenuItems(
-                                        {
-                                            playlist.validTracks +
-                                                others.flatMap { it.tracks() }
-                                        },
+                                        { playlist.validTracks + others.flatMap { it.tracks() } },
                                         viewModel.playerManager,
                                         viewModel.uiManager,
                                         historySource =
