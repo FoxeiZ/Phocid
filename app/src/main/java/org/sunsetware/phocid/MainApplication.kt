@@ -138,7 +138,7 @@ class MainApplication : Application() {
         super.onTrimMemory(level)
         when {
             level >= TRIM_MEMORY_BACKGROUND ->
-                ArtworkMemoryCache.trimToSize(5)
+                ArtworkMemoryCache.trimToSize(ArtworkMemoryCache.cacheSizeKB / 4)
             level >= TRIM_MEMORY_UI_HIDDEN ->
                 ArtworkMemoryCache.clear()
         }
