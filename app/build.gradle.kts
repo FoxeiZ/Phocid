@@ -24,14 +24,12 @@ android {
     }
 
     buildTypes {
-        debug {
-            isPseudoLocalesEnabled = true
-        }
+        debug { isPseudoLocalesEnabled = true }
         create("profile") {
             initWith(getByName("release"))
             matchingFallbacks += listOf("release")
 
-//            isMinifyEnabled = true
+            //            isMinifyEnabled = true
             isProfileable = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

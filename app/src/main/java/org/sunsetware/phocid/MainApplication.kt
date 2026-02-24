@@ -10,12 +10,12 @@ import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.sunsetware.phocid.data.HistoryList
 import org.sunsetware.phocid.data.LibraryIndex
@@ -60,10 +60,22 @@ class MainApplication : Application() {
         with(GlobalData) {
             val context = this@MainApplication
             ioScope.launch {
-                val prefsDef = async { loadCbor<Preferences>(context, PREFERENCES_FILE_NAME, false)?.upgrade() ?: Preferences() }
-                val trackIndexDef = async { loadCbor<UnfilteredTrackIndex>(context, TRACK_INDEX_FILE_NAME, false)?.upgrade() ?: UnfilteredTrackIndex(null, emptyMap()) }
-                val playerStateDef = async { loadCbor<PlayerState>(context, PLAYER_STATE_FILE_NAME, isCache = false) ?: PlayerState() }
-                val historyDef = async { loadCbor<HistoryList>(context, HISTORY_FILE_NAME, isCache = false) ?: emptyList() }
+                val prefsDef = async {
+                    loadCbor<Preferences>(context, PREFERENCES_FILE_NAME, false)?.upgrade()
+                        ?: Preferences()
+                }
+                val trackIndexDef = async {
+                    loadCbor<UnfilteredTrackIndex>(context, TRACK_INDEX_FILE_NAME, false)?.upgrade()
+                        ?: UnfilteredTrackIndex(null, emptyMap())
+                }
+                val playerStateDef = async {
+                    loadCbor<PlayerState>(context, PLAYER_STATE_FILE_NAME, isCache = false)
+                        ?: PlayerState()
+                }
+                val historyDef = async {
+                    loadCbor<HistoryList>(context, HISTORY_FILE_NAME, isCache = false)
+                        ?: emptyList()
+                }
 
                 preferences = MutableStateFlow(prefsDef.await())
                 unfilteredTrackIndex = MutableStateFlow(trackIndexDef.await())

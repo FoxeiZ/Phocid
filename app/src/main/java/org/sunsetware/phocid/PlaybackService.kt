@@ -92,7 +92,7 @@ class PlaybackService : MediaLibraryService() {
                 Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
                     putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.inner.audioSessionId)
                     putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
-                },
+                }
             )
             player.addListener(createListener(player))
 
@@ -126,17 +126,17 @@ class PlaybackService : MediaLibraryService() {
 
             mediaSession =
                 MediaLibrarySession.Builder(
-                    this@PlaybackService,
-                    player,
-                    createMediaSessionCallback(player, playerCommands),
-                )
+                        this@PlaybackService,
+                        player,
+                        createMediaSessionCallback(player, playerCommands),
+                    )
                     .setSessionActivity(
                         PendingIntent.getActivity(
                             this@PlaybackService,
                             0,
                             packageManager.getLaunchIntentForPackage(packageName),
                             PendingIntent.FLAG_IMMUTABLE,
-                        ),
+                        )
                     )
                     .setBitmapLoader(CustomizedBitmapLoader(this@PlaybackService))
                     .setSessionExtras(bundleOf(AUDIO_SESSION_ID_KEY to player.inner.audioSessionId))

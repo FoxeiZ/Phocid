@@ -128,12 +128,13 @@ class WidgetConfigureActivity : ComponentActivity() {
                         ) {
                             Column {
                                 Column(
-                                    modifier = Modifier.weight(1f)
-                                        .verticalScroll(rememberScrollState())
+                                    modifier =
+                                        Modifier.weight(1f).verticalScroll(rememberScrollState())
                                 ) {
                                     UtilityListHeader(Strings[R.string.preferences_widget_color])
                                     UtilitySwitchListItem(
-                                        title = Strings[R.string.preferences_widget_artwork_background],
+                                        title =
+                                            Strings[R.string.preferences_widget_artwork_background],
                                         checked = preferences.widgetArtworkBackground,
                                         onCheckedChange = { checked ->
                                             preferencesFlow.update {
@@ -142,7 +143,8 @@ class WidgetConfigureActivity : ComponentActivity() {
                                         },
                                     )
                                     UtilitySwitchListItem(
-                                        title = Strings[R.string.preferences_widget_accent_background],
+                                        title =
+                                            Strings[R.string.preferences_widget_accent_background],
                                         checked = preferences.widgetAccentBackground,
                                         onCheckedChange = { checked ->
                                             preferencesFlow.update {
@@ -170,14 +172,15 @@ class WidgetConfigureActivity : ComponentActivity() {
                                                         )
                                                     }
                                                 },
-                                                modifier = Modifier.padding(start = 16.dp)
-                                                    .weight(1f),
+                                                modifier =
+                                                    Modifier.padding(start = 16.dp).weight(1f),
                                             )
                                         },
                                     )
 
                                     UtilityListHeader(
-                                        Strings[R.string.preferences_widget_artwork_resolution_limit]
+                                        Strings[
+                                            R.string.preferences_widget_artwork_resolution_limit]
                                     )
                                     Text(
                                         NumberFormatter.withLocale(Locale.getDefault())
@@ -190,7 +193,7 @@ class WidgetConfigureActivity : ComponentActivity() {
                                             Modifier.padding(
                                                 start = 24.dp,
                                                 end = 24.dp,
-                                                top = 16.dp
+                                                top = 16.dp,
                                             ),
                                     )
                                     Slider(
@@ -210,23 +213,18 @@ class WidgetConfigureActivity : ComponentActivity() {
                                             }
                                         },
                                         modifier = Modifier.padding(horizontal = 24.dp),
-                                        track = {
-                                            SliderDefaults.Track(
-                                                it,
-                                                drawTick = { _, _ -> })
-                                        },
+                                        track = { SliderDefaults.Track(it, drawTick = { _, _ -> }) },
                                     )
                                     Text(
                                         Strings[
                                             R.string
-                                                .preferences_widget_artwork_resolution_limit_subtitle
-                                        ],
+                                                .preferences_widget_artwork_resolution_limit_subtitle],
                                         style = Typography.labelSmall,
                                         modifier =
                                             Modifier.padding(
                                                 start = 24.dp,
                                                 end = 24.dp,
-                                                bottom = 16.dp
+                                                bottom = 16.dp,
                                             ),
                                     )
 

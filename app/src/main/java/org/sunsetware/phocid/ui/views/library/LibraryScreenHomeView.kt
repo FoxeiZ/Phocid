@@ -210,18 +210,13 @@ class LibraryScreenHomeViewState(
                     else ->
                         combine(preferences, libraryIndex, searchQuery) { prefs, index, query ->
                                 when (tabType) {
-                                    LibraryScreenTabType.TRACKS ->
-                                        trackItems(prefs, index, query)
-                                    LibraryScreenTabType.ALBUMS ->
-                                        albumItems(prefs, index, query)
-                                    LibraryScreenTabType.ARTISTS ->
-                                        artistItems(prefs, index, query)
+                                    LibraryScreenTabType.TRACKS -> trackItems(prefs, index, query)
+                                    LibraryScreenTabType.ALBUMS -> albumItems(prefs, index, query)
+                                    LibraryScreenTabType.ARTISTS -> artistItems(prefs, index, query)
                                     LibraryScreenTabType.ALBUM_ARTISTS ->
                                         albumArtistItems(prefs, index, query)
-                                    LibraryScreenTabType.GENRES ->
-                                        genreItems(prefs, index, query)
-                                    LibraryScreenTabType.FOLDERS ->
-                                        folderItems(prefs, index, query)
+                                    LibraryScreenTabType.GENRES -> genreItems(prefs, index, query)
+                                    LibraryScreenTabType.FOLDERS -> folderItems(prefs, index, query)
                                     LibraryScreenTabType.PLAYLISTS -> throw Error()
                                     LibraryScreenTabType.HISTORY -> throw Error()
                                 }
@@ -919,9 +914,7 @@ private fun ViewTabRow(preferences: Preferences, state: LibraryScreenHomeViewSta
 
     Box(modifier = Modifier.fillMaxWidth()) {
         if (preferences.scrollableTabs) {
-            HorizontalDivider(modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth())
+            HorizontalDivider(modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth())
             PrimaryScrollableTabRow(
                 scrollState = state.tabRowScrollState,
                 selectedTabIndex = currentTabIndex,
@@ -995,8 +988,7 @@ private fun LibraryList(
                             },
                             actions = { OverflowMenu(menuItems(viewModel), state = menuState) },
                             modifier =
-                                Modifier
-                                    .multiSelectClickable(
+                                Modifier.multiSelectClickable(
                                         items,
                                         index,
                                         multiSelectManager,
@@ -1048,8 +1040,7 @@ private fun LibraryList(
                                 )
                             },
                             modifier =
-                                Modifier
-                                    .padding(2.dp)
+                                Modifier.padding(2.dp)
                                     .multiSelectClickable(
                                         items,
                                         index,
