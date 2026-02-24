@@ -24,7 +24,21 @@ android {
     }
 
     buildTypes {
-        debug { isPseudoLocalesEnabled = true }
+        debug {
+            isPseudoLocalesEnabled = true
+        }
+        create("profile") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+
+//            isMinifyEnabled = true
+            isProfileable = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isShrinkResources = true
             isMinifyEnabled = true
