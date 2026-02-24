@@ -1,6 +1,6 @@
 package org.sunsetware.phocid.globals
 
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.sunsetware.phocid.data.HistoryList
@@ -17,7 +17,7 @@ import org.sunsetware.phocid.data.UnfilteredTrackIndex
  * Initialized and saved by [org.sunsetware.phocid.MainApplication].
  */
 object GlobalData {
-    val initialized = AtomicBoolean(false)
+    val initializationDeferred = CompletableDeferred<Unit>()
 
     @Volatile lateinit var preferences: MutableStateFlow<Preferences>
     @Volatile lateinit var unfilteredTrackIndex: MutableStateFlow<UnfilteredTrackIndex>

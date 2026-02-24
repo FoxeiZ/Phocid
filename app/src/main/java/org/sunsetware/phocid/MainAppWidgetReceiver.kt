@@ -57,7 +57,6 @@ import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import org.sunsetware.phocid.data.Track
 import org.sunsetware.phocid.data.WidgetLayout
 import org.sunsetware.phocid.data.getArtworkColor
@@ -86,9 +85,7 @@ class MainAppWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        while (!GlobalData.initialized.get()) {
-            delay(50)
-        }
+        GlobalData.initializationDeferred.await()
         val coroutineScope = CoroutineScope(currentCoroutineContext() + Dispatchers.IO)
         val trackAndArtworkState =
             GlobalData.libraryIndex.combine(

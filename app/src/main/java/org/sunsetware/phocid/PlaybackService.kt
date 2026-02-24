@@ -29,6 +29,8 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -80,74 +82,77 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
-        while (!GlobalData.initialized.get()) {
-            Thread.sleep(50)
-        }
+        CoroutineScope(Dispatchers.Main).launch {
+            GlobalData.initializationDeferred.await()
 
-        val player = CustomizedPlayer(this)
+            val player = CustomizedPlayer(this@PlaybackService)
 
-        // Integrate with system equalizer.
-        sendBroadcast(
-            Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
-                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.inner.audioSessionId)
-                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+            // Integrate with system equalizer.
+            sendBroadcast(
+                Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                    putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.inner.audioSessionId)
+                    putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                },
+            )
+            player.addListener(createListener(player))
+
+            // Register listener for auto playback on device connection.
+            // Must register before restoring the state, or it'll unexpectedly start playback
+            // on app startup.
+            getSystemService(AudioManager::class.java)
+                .registerAudioDeviceCallback(audioDeviceCallback, null)
+
+            // Restore state.
+            player.restorePlayerState(
+                GlobalData.playerState.value,
+                GlobalData.unfilteredTrackIndex.value,
+            )
+            mainScope.launch {
+                GlobalData.preferences
+                    .onEach { preferences ->
+                        playOnOutputDeviceConnection = preferences.playOnOutputDeviceConnection
+                        player.setAudioAttributes(
+                            player.audioAttributes,
+                            preferences.pauseOnFocusLoss,
+                        )
+                        audioOffloading = preferences.audioOffloading
+                        player.updateAudioOffloading(audioOffloading)
+                        reshuffleOnRepeat = preferences.reshuffleOnRepeat
+                        defaultShuffleModeTrack = preferences.defaultShuffleModeTrack
+                        defaultShuffleModeList = preferences.defaultShuffleModeList
+                    }
+                    .collect()
             }
-        )
-        player.addListener(createListener(player))
 
-        // Register listener for auto playback on device connection.
-        // Must register before restoring the state, or it'll unexpectedly start playback
-        // on app startup.
-        getSystemService(AudioManager::class.java)
-            .registerAudioDeviceCallback(audioDeviceCallback, null)
-
-        // Restore state.
-        player.restorePlayerState(
-            GlobalData.playerState.value,
-            GlobalData.unfilteredTrackIndex.value,
-        )
-        mainScope.launch {
-            GlobalData.preferences
-                .onEach { preferences ->
-                    playOnOutputDeviceConnection = preferences.playOnOutputDeviceConnection
-                    player.setAudioAttributes(player.audioAttributes, preferences.pauseOnFocusLoss)
-                    audioOffloading = preferences.audioOffloading
-                    player.updateAudioOffloading(audioOffloading)
-                    reshuffleOnRepeat = preferences.reshuffleOnRepeat
-                    defaultShuffleModeTrack = preferences.defaultShuffleModeTrack
-                    defaultShuffleModeList = preferences.defaultShuffleModeList
-                }
-                .collect()
-        }
-
-        mediaSession =
-            MediaLibrarySession.Builder(
-                    this,
+            mediaSession =
+                MediaLibrarySession.Builder(
+                    this@PlaybackService,
                     player,
                     createMediaSessionCallback(player, playerCommands),
                 )
-                .setSessionActivity(
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        packageManager.getLaunchIntentForPackage(packageName),
-                        PendingIntent.FLAG_IMMUTABLE,
+                    .setSessionActivity(
+                        PendingIntent.getActivity(
+                            this@PlaybackService,
+                            0,
+                            packageManager.getLaunchIntentForPackage(packageName),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        ),
                     )
-                )
-                .setBitmapLoader(CustomizedBitmapLoader(this))
-                .setSessionExtras(bundleOf(AUDIO_SESSION_ID_KEY to player.inner.audioSessionId))
-                .setMediaButtonPreferences(commandButtons(player))
-                .build()
+                    .setBitmapLoader(CustomizedBitmapLoader(this@PlaybackService))
+                    .setSessionExtras(bundleOf(AUDIO_SESSION_ID_KEY to player.inner.audioSessionId))
+                    .setMediaButtonPreferences(commandButtons(player))
+                    .build()
 
-        // Update command buttons on global data changes.
-        mainScope.launch {
-            GlobalData.preferences
-                .combine(GlobalData.playlistManager.playlists) { preferences, playlists ->
-                    preferences.notificationButtons to playlists
-                }
-                .distinctUntilChanged()
-                .onEach { mediaSession?.setMediaButtonPreferences(commandButtons(player)) }
-                .collect()
+            // Update command buttons on global data changes.
+            mainScope.launch {
+                GlobalData.preferences
+                    .combine(GlobalData.playlistManager.playlists) { preferences, playlists ->
+                        preferences.notificationButtons to playlists
+                    }
+                    .distinctUntilChanged()
+                    .onEach { mediaSession?.setMediaButtonPreferences(commandButtons(player)) }
+                    .collect()
+            }
         }
     }
 

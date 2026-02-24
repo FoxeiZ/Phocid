@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -77,9 +76,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     fun initialize() {
         if (!initializationStarted.getAndSet(true)) {
             viewModelScope.launch {
-                while (!GlobalData.initialized.get()) {
-                    delay(50)
-                }
+                GlobalData.initializationDeferred.await()
                 playerManager =
                     PlayerManager(GlobalData.playerState, GlobalData.playerTransientState)
                 uiManager =
