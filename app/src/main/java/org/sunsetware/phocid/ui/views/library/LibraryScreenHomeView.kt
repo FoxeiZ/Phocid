@@ -57,11 +57,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaMetadata
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -116,15 +121,15 @@ import org.sunsetware.phocid.ui.views.collectionMenuItems
 import org.sunsetware.phocid.ui.views.playlistCollectionMenuItems
 import org.sunsetware.phocid.ui.views.playlistCollectionMultiSelectMenuItems
 import org.sunsetware.phocid.ui.views.trackMenuItemsLibrary
+import org.sunsetware.phocid.utils.STOP_TIMEOUT
 import org.sunsetware.phocid.utils.coerceInOrMin
-import org.sunsetware.phocid.utils.combine
 import org.sunsetware.phocid.utils.trimAndNormalize
 
 @Immutable
 data class LibraryScreenHomeViewItem(
     val key: Any,
     val title: String,
-    val subtitle: String,
+    val subtitle: () -> String?,
     val scrollHint: String,
     val artwork: Artwork,
     val tracks: () -> List<Track>,
@@ -164,26 +169,31 @@ class LibraryScreenHomeViewState(
     val pagerState = DefaultPagerState { preferences.value.tabs.size }
     val tabStates =
         LibraryScreenTabType.entries.associateWith { tabType ->
-            val items =
+            val items: StateFlow<List<LibraryScreenHomeViewItem>> =
                 when (tabType) {
                     LibraryScreenTabType.PLAYLISTS ->
-                        preferences.combine(
-                            coroutineScope,
-                            playlistManager.playlists,
-                            searchQuery,
-                            transform = ::playlistItems,
-                        )
-                    LibraryScreenTabType.HISTORY ->
-                        preferences
-                            .combine(
+                        combine(preferences, playlistManager.playlists, searchQuery) {
+                                prefs,
+                                playlists,
+                                query ->
+                                playlistItems(prefs, playlists, query)
+                            }
+                            .flowOn(Dispatchers.Default)
+                            .stateIn(
                                 coroutineScope,
+                                SharingStarted.WhileSubscribed(STOP_TIMEOUT),
+                                emptyList(),
+                            )
+                    LibraryScreenTabType.HISTORY ->
+                        combine(
+                                preferences,
                                 libraryIndex,
                                 playlistManager.playlists,
                                 historyEntries,
                             ) { _, library, playlists, history ->
                                 HistoryItemsInput(library, playlists, history)
                             }
-                            .combine(coroutineScope, searchQuery) { input, query ->
+                            .combine(searchQuery) { input, query ->
                                 historyItems(
                                     input.libraryIndex,
                                     input.playlists,
@@ -191,23 +201,37 @@ class LibraryScreenHomeViewState(
                                     query,
                                 )
                             }
+                            .flowOn(Dispatchers.Default)
+                            .stateIn(
+                                coroutineScope,
+                                SharingStarted.WhileSubscribed(STOP_TIMEOUT),
+                                emptyList(),
+                            )
                     else ->
-                        preferences.combine(
-                            coroutineScope,
-                            libraryIndex,
-                            searchQuery,
-                            transform =
+                        combine(preferences, libraryIndex, searchQuery) { prefs, index, query ->
                                 when (tabType) {
-                                    LibraryScreenTabType.TRACKS -> ::trackItems
-                                    LibraryScreenTabType.ALBUMS -> ::albumItems
-                                    LibraryScreenTabType.ARTISTS -> ::artistItems
-                                    LibraryScreenTabType.ALBUM_ARTISTS -> ::albumArtistItems
-                                    LibraryScreenTabType.GENRES -> ::genreItems
-                                    LibraryScreenTabType.FOLDERS -> ::folderItems
+                                    LibraryScreenTabType.TRACKS ->
+                                        trackItems(prefs, index, query)
+                                    LibraryScreenTabType.ALBUMS ->
+                                        albumItems(prefs, index, query)
+                                    LibraryScreenTabType.ARTISTS ->
+                                        artistItems(prefs, index, query)
+                                    LibraryScreenTabType.ALBUM_ARTISTS ->
+                                        albumArtistItems(prefs, index, query)
+                                    LibraryScreenTabType.GENRES ->
+                                        genreItems(prefs, index, query)
+                                    LibraryScreenTabType.FOLDERS ->
+                                        folderItems(prefs, index, query)
                                     LibraryScreenTabType.PLAYLISTS -> throw Error()
                                     LibraryScreenTabType.HISTORY -> throw Error()
-                                },
-                        )
+                                }
+                            }
+                            .flowOn(Dispatchers.Default)
+                            .stateIn(
+                                coroutineScope,
+                                SharingStarted.WhileSubscribed(STOP_TIMEOUT),
+                                emptyList(),
+                            )
                 }
 
             LibraryScreenHomeViewTabState(MultiSelectState(coroutineScope, items))
@@ -253,7 +277,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = track.id,
                 title = track.displayTitle,
-                subtitle = track.displayArtistWithAlbum,
+                subtitle = { track.displayArtistWithAlbum },
                 scrollHint = hint,
                 artwork = Artwork.Track(track),
                 tracks = { listOf(track) },
@@ -302,7 +326,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = key.toString(),
                 title = album.name,
-                subtitle = album.displayAlbumArtist,
+                subtitle = { album.displayAlbumArtist },
                 scrollHint = hint,
                 artwork = Artwork.Track(album.tracks.firstOrNull() ?: InvalidTrack),
                 tracks = { album.tracks },
@@ -344,7 +368,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = artist.name,
                 title = artist.name,
-                subtitle = artist.displayStatistics,
+                subtitle = { artist.displayStatistics },
                 scrollHint = hint,
                 artwork = Artwork.Track(artist.tracks.firstOrNull() ?: InvalidTrack),
                 tracks = { artist.tracks },
@@ -380,7 +404,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = albumArtist.name,
                 title = albumArtist.name,
-                subtitle = albumArtist.displayStatistics,
+                subtitle = { albumArtist.displayStatistics },
                 scrollHint = hint,
                 artwork = Artwork.Track(albumArtist.tracks.firstOrNull() ?: InvalidTrack),
                 tracks = { albumArtist.tracks },
@@ -416,7 +440,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = genre.name,
                 title = genre.name,
-                subtitle = genre.displayStatistics,
+                subtitle = { genre.displayStatistics },
                 scrollHint = hint,
                 artwork = Artwork.Track(genre.tracks.firstOrNull() ?: InvalidTrack),
                 tracks = { genre.tracks },
@@ -472,7 +496,7 @@ class LibraryScreenHomeViewState(
                     LibraryScreenHomeViewItem(
                         key = folder.path,
                         title = folder.fileName,
-                        subtitle = folder.displayStatistics,
+                        subtitle = { folder.displayStatistics },
                         scrollHint = hint,
                         artwork = Artwork.Icon(Icons.Outlined.Folder, folder.path.hashColor()),
                         tracks = { folder.childTracksRecursive(libraryIndex.folders) },
@@ -504,7 +528,7 @@ class LibraryScreenHomeViewState(
                     LibraryScreenHomeViewItem(
                         key = track.id,
                         title = track.fileName,
-                        subtitle = track.duration.format(),
+                        subtitle = { track.duration.format() },
                         scrollHint = hint,
                         artwork = Artwork.Track(track),
                         tracks = { listOf(track) },
@@ -556,7 +580,7 @@ class LibraryScreenHomeViewState(
             LibraryScreenHomeViewItem(
                 key = key,
                 title = playlist.displayName,
-                subtitle = playlist.displayStatistics,
+                subtitle = { playlist.displayStatistics },
                 scrollHint = hint,
                 artwork =
                     playlist.specialType?.let { Artwork.Icon(it.icon, it.color) }
@@ -631,7 +655,7 @@ class LibraryScreenHomeViewState(
             return LibraryScreenHomeViewItem(
                 key = "history-$keyPrefix-$trackId-$timestamp",
                 title = title,
-                subtitle = subtitle,
+                subtitle = { subtitle },
                 scrollHint = title.firstOrNull()?.toString() ?: "",
                 artwork = Artwork.Track(track ?: InvalidTrack),
                 tracks = { listOfNotNull(track) },
@@ -689,7 +713,7 @@ class LibraryScreenHomeViewState(
                         LibraryScreenHomeViewItem(
                             key = "history-album-${entry.albumKey}-${entry.timestamp}",
                             title = title,
-                            subtitle = subtitle,
+                            subtitle = { subtitle },
                             scrollHint = title.firstOrNull()?.toString() ?: "",
                             artwork = Artwork.Track(artworkTrack),
                             tracks = { album?.tracks ?: emptyList() },
@@ -739,7 +763,7 @@ class LibraryScreenHomeViewState(
                         LibraryScreenHomeViewItem(
                             key = "history-playlist-${entry.playlistKey}-${entry.timestamp}",
                             title = title,
-                            subtitle = subtitle,
+                            subtitle = { subtitle },
                             scrollHint = title.firstOrNull()?.toString() ?: "",
                             artwork = artwork,
                             tracks = { playlist?.validTracks ?: emptyList() },
@@ -801,7 +825,7 @@ fun LibraryScreenHomeView(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column {
             ViewTabRow(preferences, state)
-            HorizontalPager(state = pagerState) { i ->
+            HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { i ->
                 if (preferences.tabs.size > i && state.tabStates.size > i) {
                     val tab = preferences.tabs[i]
                     val (multiSelectState, lazyGridState) = state.tabStates[tab.type]!!
@@ -895,7 +919,9 @@ private fun ViewTabRow(preferences: Preferences, state: LibraryScreenHomeViewSta
 
     Box(modifier = Modifier.fillMaxWidth()) {
         if (preferences.scrollableTabs) {
-            HorizontalDivider(modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth())
+            HorizontalDivider(modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth())
             PrimaryScrollableTabRow(
                 scrollState = state.tabRowScrollState,
                 selectedTabIndex = currentTabIndex,
@@ -956,7 +982,7 @@ private fun LibraryList(
                         val menuState = remember { mutableStateOf(false) }
                         LibraryListItemHorizontal(
                             title = title,
-                            subtitle = subtitle,
+                            subtitle = subtitle() ?: "",
                             lead = {
                                 ArtworkImage(
                                     artwork = artwork,
@@ -969,7 +995,8 @@ private fun LibraryList(
                             },
                             actions = { OverflowMenu(menuItems(viewModel), state = menuState) },
                             modifier =
-                                Modifier.multiSelectClickable(
+                                Modifier
+                                    .multiSelectClickable(
                                         items,
                                         index,
                                         multiSelectManager,
@@ -1005,7 +1032,7 @@ private fun LibraryList(
                         OverflowMenu(menuItems(viewModel), state = menuState)
                         LibraryListItemCard(
                             title = title,
-                            subtitle = subtitle,
+                            subtitle = subtitle() ?: "",
                             color =
                                 if (coloredCards) artwork.getColor(artworkColorPreference)
                                 else MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -1021,7 +1048,8 @@ private fun LibraryList(
                                 )
                             },
                             modifier =
-                                Modifier.padding(2.dp)
+                                Modifier
+                                    .padding(2.dp)
                                     .multiSelectClickable(
                                         items,
                                         index,
