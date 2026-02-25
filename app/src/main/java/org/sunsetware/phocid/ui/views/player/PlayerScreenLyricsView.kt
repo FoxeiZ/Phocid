@@ -1,9 +1,11 @@
 package org.sunsetware.phocid.ui.views.player
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +59,7 @@ sealed class PlayerScreenLyricsView {
         currentPosition: () -> Long,
         preferences: Preferences,
         onDisableAutoScroll: () -> Unit,
+        onSeek: (Long) -> Unit,
     )
 }
 
@@ -69,6 +72,7 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
         currentPosition: () -> Long,
         preferences: Preferences,
         onDisableAutoScroll: () -> Unit,
+        onSeek: (Long) -> Unit,
     ) {
         fun getLineIndex(): Int? {
             return (lyrics as? PlayerScreenLyrics.Synced)
@@ -160,12 +164,21 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
                     content = {
                         when (lyrics) {
                             is PlayerScreenLyrics.Synced -> {
-                                lyrics.value.lines.forEachIndexed { index, (_, text) ->
+                                lyrics.value.lines.forEachIndexed { index, (timestamp, text) ->
                                     val alpha by
                                         animateFloatAsState(
                                             if (index == currentLineIndex) 1f else INACTIVE_ALPHA
                                         )
-                                    Text(text, style = textStyle, modifier = Modifier.alpha(alpha))
+                                    Text(
+                                        text,
+                                        style = textStyle,
+                                        modifier =
+                                            Modifier.fillMaxWidth()
+                                                .clickable {
+                                                    onSeek(timestamp.inWholeMilliseconds)
+                                                }
+                                                .alpha(alpha),
+                                    )
                                 }
                             }
                             is PlayerScreenLyrics.Unsynced -> {

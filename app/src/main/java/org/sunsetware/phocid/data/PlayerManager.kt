@@ -121,6 +121,10 @@ class PlayerManager(
         mediaController.seekTo((duration * fraction).toLong().coerceInOrMin(0, duration))
     }
 
+    fun seekToPosition(positionMs: Long) {
+        mediaController.seekTo(positionMs)
+    }
+
     fun togglePlay() {
         if (mediaController.isPlaying) {
             mediaController.pause()

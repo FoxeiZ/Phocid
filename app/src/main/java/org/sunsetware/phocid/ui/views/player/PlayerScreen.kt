@@ -477,6 +477,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                 currentPosition = { playerManager.currentPosition },
                                 preferences = preferences,
                                 onDisableAutoScroll = { lyricsViewAutoScroll = false },
+                                onSeek = { playerManager.seekToPosition(it) },
                             )
                         }
                         Box {
