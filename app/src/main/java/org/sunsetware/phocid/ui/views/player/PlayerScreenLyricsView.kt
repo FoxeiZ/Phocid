@@ -57,6 +57,7 @@ sealed class PlayerScreenLyricsView {
         lyrics: PlayerScreenLyrics?,
         autoScroll: () -> Boolean,
         currentPosition: () -> Long,
+        isPlaying: () -> Boolean,
         preferences: Preferences,
         onDisableAutoScroll: () -> Unit,
         onSeek: (Long) -> Unit,
@@ -70,6 +71,7 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
         lyrics: PlayerScreenLyrics?,
         autoScroll: () -> Boolean,
         currentPosition: () -> Long,
+        isPlaying: () -> Boolean,
         preferences: Preferences,
         onDisableAutoScroll: () -> Unit,
         onSeek: (Long) -> Unit,
@@ -88,9 +90,11 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
         val linePositions = remember { AtomicReference(emptyList<Int>()) }
         var currentLineIndex by remember { mutableStateOf(null as Int?) }
 
-        LifecycleLaunchedEffect(lyrics, minActiveState = Lifecycle.State.RESUMED) {
-            currentLineIndex = null
-            if (lyrics is PlayerScreenLyrics.Synced) {
+        LifecycleLaunchedEffect(lyrics, isPlaying(), minActiveState = Lifecycle.State.RESUMED) {
+            // Always calculate once immediately so UI reflects manual seeks / paused state
+            currentLineIndex = getLineIndex()
+
+            if (lyrics is PlayerScreenLyrics.Synced && isPlaying()) {
                 while (isActive) {
                     currentLineIndex = getLineIndex()
                     if (autoScroll()) {

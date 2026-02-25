@@ -475,6 +475,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                 lyrics = currentTrackLyrics,
                                 autoScroll = { lyricsViewAutoScroll },
                                 currentPosition = { playerManager.currentPosition },
+                                isPlaying = { isPlaying },
                                 preferences = preferences,
                                 onDisableAutoScroll = { lyricsViewAutoScroll = false },
                                 onSeek = { playerManager.seekToPosition(it) },
