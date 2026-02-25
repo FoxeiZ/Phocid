@@ -63,6 +63,7 @@ import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.utils.CaseInsensitiveMap
 import org.sunsetware.phocid.utils.ColorSerializer
 import org.sunsetware.phocid.utils.coerceInOrMin
+import org.sunsetware.phocid.utils.decodeWithCharsetName
 import org.sunsetware.phocid.utils.distinctCaseInsensitive
 import org.sunsetware.phocid.utils.icuFormat
 import org.sunsetware.phocid.utils.mode
@@ -152,7 +153,7 @@ data class Track(
     override val searchableStrings =
         listOfNotNull(displayTitle, displayArtist, album, displayAlbumArtist, fileName)
 
-    override val sortTitle: String?
+    override val sortTitle: String
         get() = displayTitle
 
     override val sortArtist
@@ -310,22 +311,65 @@ data class Track(
     }
 }
 
-fun loadLyrics(track: Track, charsetName: String?): Lyrics? {
-    try {
-        val trackFileNameWithoutExtension = FilenameUtils.getBaseName(track.path)
-        val trackFileName = FilenameUtils.getName(track.path)
-        val files = File(FilenameUtils.getPath(track.path)).listFiles()
-        return files
-            ?.filter { it.extension.equals("lrc", true) }
-            ?.firstOrNull {
-                it.nameWithoutExtension.equals(trackFileNameWithoutExtension, true) ||
-                    it.nameWithoutExtension.equals(trackFileName, true)
+fun scanAvailableLyrics(track: Track): List<LyricsOption> {
+    val embeddedOption =
+        if (!track.unsyncedLyrics.isNullOrEmpty())
+            listOf(LyricsOption(tag = LYRICS_OPTION_EMBEDDED_TAG, filePath = "", extension = ""))
+        else emptyList()
+    val externalOptions = try {
+        val baseName = FilenameUtils.getBaseName(track.path)
+        val dir = File(FilenameUtils.getFullPath(track.path))
+        val files = dir.listFiles() ?: emptyArray()
+        val prefix = "$baseName."
+        files
+            .filter { file ->
+                val ext = file.extension.lowercase()
+                (ext == "lrc" || ext == "txt") &&
+                    file.name.startsWith(prefix, ignoreCase = true)
             }
-            ?.readBytes()
-            ?.let { parseLrc(it, charsetName) }
+            .map { file ->
+                val ext = file.extension
+                val withoutPrefix = file.name.substring(prefix.length)
+                val tag =
+                    if (withoutPrefix.equals(ext, ignoreCase = true)) {
+                        "Standard"
+                    } else {
+                        withoutPrefix
+                            .removeSuffix(".$ext")
+                            .ifEmpty { "Standard" }
+                    }
+                LyricsOption(
+                    tag = tag,
+                    filePath = file.absolutePath,
+                    extension = ext.lowercase(),
+                )
+            }
+            .sortedBy { it.tag }
     } catch (ex: Exception) {
-        Log.e("Phocid", "Can't load lyrics for ${track.path}", ex)
-        return null
+        Log.e("Phocid", "scanAvailableLyrics: can't scan lyrics for ${track.path}", ex)
+        emptyList()
+    }
+    return embeddedOption + externalOptions
+}
+
+fun loadLyricsFromOption(option: LyricsOption, unsyncedLyrics: String?, charsetName: String?): LyricsLoadResult? {
+    if (option.isEmbedded) {
+        return unsyncedLyrics?.let { lyrics ->
+            parseLrc(lyrics)
+                .takeIf { it.lines.isNotEmpty() }
+                ?.let { LyricsLoadResult.Synced(it) }
+                ?: LyricsLoadResult.Unsynced(lyrics)
+        }
+    }
+    return try {
+        val rawLines = File(option.filePath).readBytes().decodeWithCharsetName(charsetName).trimAndNormalize()
+        parseLrc(rawLines)
+            .takeIf { it.lines.isNotEmpty() }
+            ?.let { LyricsLoadResult.Synced(it) }
+            ?: LyricsLoadResult.Unsynced(rawLines)
+    } catch (ex: Exception) {
+        Log.e("Phocid", "loadLyricsFromOption: can't load lyrics from ${option.filePath}", ex)
+        null
     }
 }
 

@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,7 +23,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.sunsetware.phocid.data.HistoryClearRange
 import org.sunsetware.phocid.data.HistoryList
-import org.sunsetware.phocid.data.Lyrics
 import org.sunsetware.phocid.data.PlayerManager
 import org.sunsetware.phocid.data.Preferences
 import org.sunsetware.phocid.data.cutoffMillis
@@ -57,7 +55,6 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     val playlistManager
         get() = GlobalData.playlistManager
 
-    val lyricsCache = AtomicReference(null as Pair<Long, Lyrics>?)
     val carouselArtworkCache = ArtworkCache(viewModelScope, 4)
     val playlistIoDirectory = MutableStateFlow(null as Uri?)
     private val _libraryScanState = MutableStateFlow(null as Boolean?)

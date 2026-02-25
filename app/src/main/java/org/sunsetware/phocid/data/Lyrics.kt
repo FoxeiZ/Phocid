@@ -9,6 +9,23 @@ import kotlin.time.Duration.Companion.seconds
 import org.sunsetware.phocid.utils.decodeWithCharsetName
 import org.sunsetware.phocid.utils.trimAndNormalize
 
+const val LYRICS_OPTION_EMBEDDED_TAG = "Embedded"
+
+@Immutable
+data class LyricsOption(
+    val tag: String,
+    val filePath: String,
+    val extension: String,
+) {
+    val isEmbedded: Boolean get() = filePath.isEmpty()
+}
+
+@Immutable
+sealed class LyricsLoadResult {
+    @Immutable class Synced(val value: Lyrics) : LyricsLoadResult()
+    @Immutable class Unsynced(val value: String) : LyricsLoadResult()
+}
+
 @Immutable
 data class Lyrics(val lines: List<Pair<Duration, String>>) {
     @Stable

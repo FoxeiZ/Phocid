@@ -59,10 +59,11 @@ import org.sunsetware.phocid.MainViewModel
 import org.sunsetware.phocid.R
 import org.sunsetware.phocid.data.InvalidTrack
 import org.sunsetware.phocid.data.Lyrics
+import org.sunsetware.phocid.data.LyricsLoadResult
 import org.sunsetware.phocid.data.getArtworkColor
 import org.sunsetware.phocid.data.isFavorite
-import org.sunsetware.phocid.data.loadLyrics
-import org.sunsetware.phocid.data.parseLrc
+import org.sunsetware.phocid.data.loadLyricsFromOption
+import org.sunsetware.phocid.data.scanAvailableLyrics
 import org.sunsetware.phocid.ui.components.DragLock
 import org.sunsetware.phocid.ui.theme.LocalThemeAccent
 import org.sunsetware.phocid.ui.theme.contentColor
@@ -121,25 +122,31 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
     val playlists by viewModel.playlistManager.playlists.collectAsStateWithLifecycle()
     val currentTrackIsFavorite =
         remember(currentTrack, playlists) { playlists.isFavorite(currentTrack) }
+    val availableLyrics = remember(currentTrack) { scanAvailableLyrics(currentTrack) }
+    val selectedLyricsTag by uiManager.playerScreenSelectedLyricsTag.collectAsStateWithLifecycle()
+    // Reset selected tag when track changes
+    LaunchedEffect(currentTrack) {
+        uiManager.playerScreenSelectedLyricsTag.update { null }
+    }
     val currentTrackLyrics =
-        remember(currentTrack) {
-            val cachedLyrics = viewModel.lyricsCache.get()
-            if (cachedLyrics != null && cachedLyrics.first == currentTrack.id) {
-                PlayerScreenLyrics.Synced(cachedLyrics.second)
+        remember(currentTrack, selectedLyricsTag) {
+            val effectiveOption = if (selectedLyricsTag != null) {
+                availableLyrics.find { it.tag == selectedLyricsTag }
             } else {
-                val externalLyrics = loadLyrics(currentTrack, preferences.charsetName)
-                if (externalLyrics != null)
-                    viewModel.lyricsCache.set(Pair(currentTrack.id, externalLyrics))
-                externalLyrics?.let { PlayerScreenLyrics.Synced(it) }
-                    ?: if (preferences.treatEmbeddedLyricsAsLrc) {
-                        currentTrack.unsyncedLyrics
-                            ?.let { parseLrc(it) }
-                            ?.takeIf { it.lines.isNotEmpty() }
-                            ?.let { PlayerScreenLyrics.Synced(it) }
-                            ?: currentTrack.unsyncedLyrics?.let { PlayerScreenLyrics.Unsynced(it) }
-                    } else {
-                        currentTrack.unsyncedLyrics?.let { PlayerScreenLyrics.Unsynced(it) }
-                    }
+                availableLyrics.firstOrNull()
+            }
+            if (effectiveOption != null) {
+                when (val result = loadLyricsFromOption(
+                    effectiveOption,
+                    currentTrack.unsyncedLyrics,
+                    preferences.charsetName,
+                )) {
+                    is LyricsLoadResult.Synced -> PlayerScreenLyrics.Synced(result.value)
+                    is LyricsLoadResult.Unsynced -> PlayerScreenLyrics.Unsynced(result.value)
+                    null -> null
+                }
+            } else {
+                null
             }
         }
     val isPlaying by
@@ -406,12 +413,17 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                         currentTrackLyrics is PlayerScreenLyrics.Synced,
                                 lyricsButtonEnabled =
                                     uiState.useLyricsView || currentTrackLyrics != null,
+                                availableLyrics = availableLyrics,
+                                selectedLyricsTag = selectedLyricsTag,
                                 overlayVisibility = uiState.overlayVisibility,
                                 onBack = { uiManager.back() },
                                 onEnableLyricsViewAutoScroll = { lyricsViewAutoScroll = true },
                                 onToggleLyricsView = {
                                     uiManager.playerScreenUseLyricsView.update { !it }
                                     hideOverlay = false
+                                },
+                                onSelectLyricsTag = { tag ->
+                                    uiManager.playerScreenSelectedLyricsTag.update { tag }
                                 },
                             )
                         }
@@ -426,12 +438,17 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                         currentTrackLyrics is PlayerScreenLyrics.Synced,
                                 lyricsButtonEnabled =
                                     uiState.useLyricsView || currentTrackLyrics != null,
+                                availableLyrics = availableLyrics,
+                                selectedLyricsTag = selectedLyricsTag,
                                 overlayVisibility = uiState.overlayVisibility,
                                 onBack = { uiManager.back() },
                                 onEnableLyricsViewAutoScroll = { lyricsViewAutoScroll = true },
                                 onToggleLyricsView = {
                                     uiManager.playerScreenUseLyricsView.update { !it }
                                     hideOverlay = false
+                                },
+                                onSelectLyricsTag = { tag ->
+                                    uiManager.playerScreenSelectedLyricsTag.update { tag }
                                 },
                             )
                         }

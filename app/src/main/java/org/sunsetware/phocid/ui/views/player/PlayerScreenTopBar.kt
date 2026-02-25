@@ -16,22 +16,30 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.VerticalAlignCenter
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.sunsetware.phocid.R
+import org.sunsetware.phocid.data.LyricsOption
 import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.ui.components.SingleLineText
 import org.sunsetware.phocid.ui.theme.INACTIVE_ALPHA
@@ -46,10 +54,13 @@ sealed class PlayerScreenTopBar {
         lyricsViewVisibility: Boolean,
         lyricsAutoScrollButtonVisibility: Boolean,
         lyricsButtonEnabled: Boolean,
+        availableLyrics: List<LyricsOption>,
+        selectedLyricsTag: String?,
         overlayVisibility: Float,
         onBack: () -> Unit,
         onEnableLyricsViewAutoScroll: () -> Unit,
         onToggleLyricsView: () -> Unit,
+        onSelectLyricsTag: (String) -> Unit,
     )
 }
 
@@ -62,11 +73,15 @@ object PlayerScreenTopBarDefaultOverlay : PlayerScreenTopBar() {
         lyricsViewVisibility: Boolean,
         lyricsAutoScrollButtonVisibility: Boolean,
         lyricsButtonEnabled: Boolean,
+        availableLyrics: List<LyricsOption>,
+        selectedLyricsTag: String?,
         overlayVisibility: Float,
         onBack: () -> Unit,
         onEnableLyricsViewAutoScroll: () -> Unit,
         onToggleLyricsView: () -> Unit,
+        onSelectLyricsTag: (String) -> Unit,
     ) {
+        var lyricsDropdownExpanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxWidth().height((48 + 8 * 2).dp).alpha(overlayVisibility)) {
             FilledTonalIconButton(
                 onClick = onBack,
@@ -107,24 +122,53 @@ object PlayerScreenTopBarDefaultOverlay : PlayerScreenTopBar() {
                     enter = fadeIn(emphasizedStandard()),
                     exit = fadeOut(emphasizedStandard()),
                 ) {
-                    FilledTonalIconButton(
-                        onClick = onToggleLyricsView,
-                        colors =
-                            IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = containerColor,
-                                contentColor = contentColor,
-                            ),
-                    ) {
-                        AnimatedContent(lyricsViewVisibility) {
-                            if (it) {
-                                Icon(
-                                    Icons.Outlined.Image,
-                                    contentDescription = Strings[R.string.player_close_lyrics],
-                                )
-                            } else {
-                                Icon(
-                                    Icons.Outlined.Subtitles,
-                                    contentDescription = Strings[R.string.player_lyrics],
+                    Box {
+                        FilledTonalIconButton(
+                            onClick = {
+                                if (availableLyrics.size > 1 && !lyricsViewVisibility) {
+                                    lyricsDropdownExpanded = true
+                                } else {
+                                    onToggleLyricsView()
+                                }
+                            },
+                            colors =
+                                IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = containerColor,
+                                    contentColor = contentColor,
+                                ),
+                        ) {
+                            AnimatedContent(lyricsViewVisibility) {
+                                if (it) {
+                                    Icon(
+                                        Icons.Outlined.Image,
+                                        contentDescription = Strings[R.string.player_close_lyrics],
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.Subtitles,
+                                        contentDescription = Strings[R.string.player_lyrics],
+                                    )
+                                }
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = lyricsDropdownExpanded,
+                            onDismissRequest = { lyricsDropdownExpanded = false },
+                        ) {
+                            availableLyrics.forEach { option ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "${option.tag} (.${option.extension})",
+                                        )
+                                    },
+                                    onClick = {
+                                        onSelectLyricsTag(option.tag)
+                                        lyricsDropdownExpanded = false
+                                        if (!lyricsViewVisibility) {
+                                            onToggleLyricsView()
+                                        }
+                                    },
                                 )
                             }
                         }
@@ -144,11 +188,15 @@ object PlayerScreenTopBarDefaultStandalone : PlayerScreenTopBar() {
         lyricsViewVisibility: Boolean,
         lyricsAutoScrollButtonVisibility: Boolean,
         lyricsButtonEnabled: Boolean,
+        availableLyrics: List<LyricsOption>,
+        selectedLyricsTag: String?,
         overlayVisibility: Float,
         onBack: () -> Unit,
         onEnableLyricsViewAutoScroll: () -> Unit,
         onToggleLyricsView: () -> Unit,
+        onSelectLyricsTag: (String) -> Unit,
     ) {
+        var lyricsDropdownExpanded by remember { mutableStateOf(false) }
         // Hack to remove animation delay
         // https://stackoverflow.com/q/77928923
         key(containerColor) {
@@ -178,7 +226,16 @@ object PlayerScreenTopBarDefaultStandalone : PlayerScreenTopBar() {
                                 )
                             }
                         }
-                        IconButton(enabled = lyricsButtonEnabled, onClick = onToggleLyricsView) {
+                        IconButton(
+                            enabled = lyricsButtonEnabled,
+                            onClick = {
+                                if (availableLyrics.size > 1 && !lyricsViewVisibility) {
+                                    lyricsDropdownExpanded = true
+                                } else {
+                                    onToggleLyricsView()
+                                }
+                            },
+                        ) {
                             AnimatedContent(lyricsViewVisibility) {
                                 if (it) {
                                     Icon(
@@ -191,6 +248,27 @@ object PlayerScreenTopBarDefaultStandalone : PlayerScreenTopBar() {
                                         contentDescription = Strings[R.string.player_lyrics],
                                     )
                                 }
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = lyricsDropdownExpanded,
+                            onDismissRequest = { lyricsDropdownExpanded = false },
+                        ) {
+                            availableLyrics.forEach { option ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "${option.tag} (.${option.extension})",
+                                        )
+                                    },
+                                    onClick = {
+                                        onSelectLyricsTag(option.tag)
+                                        lyricsDropdownExpanded = false
+                                        if (!lyricsViewVisibility) {
+                                            onToggleLyricsView()
+                                        }
+                                    },
+                                )
                             }
                         }
                     },
