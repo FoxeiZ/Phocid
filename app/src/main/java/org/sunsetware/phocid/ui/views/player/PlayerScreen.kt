@@ -123,18 +123,13 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
     val currentTrackIsFavorite =
         remember(currentTrack, playlists) { playlists.isFavorite(currentTrack) }
     val availableLyrics = remember(currentTrack) { scanAvailableLyrics(currentTrack) }
-    val selectedLyricsTag by uiManager.playerScreenSelectedLyricsTag.collectAsStateWithLifecycle()
-    // Reset selected tag when track changes
-    LaunchedEffect(currentTrack) {
-        uiManager.playerScreenSelectedLyricsTag.update { null }
-    }
+    val selectedLyricsOption by viewModel.selectedLyricsOption.collectAsStateWithLifecycle()
     val currentTrackLyrics =
-        remember(currentTrack, selectedLyricsTag) {
-            val effectiveOption = if (selectedLyricsTag != null) {
-                availableLyrics.find { it.tag == selectedLyricsTag }
-            } else {
-                availableLyrics.firstOrNull()
-            }
+        remember(currentTrack, selectedLyricsOption) {
+            val effectiveOption =
+                selectedLyricsOption
+                    ?.let { sel -> availableLyrics.find { it.tag == sel.tag } }
+                    ?: availableLyrics.firstOrNull()
             if (effectiveOption != null) {
                 when (val result = loadLyricsFromOption(
                     effectiveOption,
@@ -414,7 +409,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                 lyricsButtonEnabled =
                                     uiState.useLyricsView || currentTrackLyrics != null,
                                 availableLyrics = availableLyrics,
-                                selectedLyricsTag = selectedLyricsTag,
+                                selectedLyricsTag = selectedLyricsOption?.tag,
                                 overlayVisibility = uiState.overlayVisibility,
                                 onBack = { uiManager.back() },
                                 onEnableLyricsViewAutoScroll = { lyricsViewAutoScroll = true },
@@ -423,7 +418,8 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                     hideOverlay = false
                                 },
                                 onSelectLyricsTag = { tag ->
-                                    uiManager.playerScreenSelectedLyricsTag.update { tag }
+                                    availableLyrics.find { it.tag == tag }
+                                        ?.let { viewModel.selectLyrics(it) }
                                 },
                             )
                         }
@@ -439,7 +435,7 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                 lyricsButtonEnabled =
                                     uiState.useLyricsView || currentTrackLyrics != null,
                                 availableLyrics = availableLyrics,
-                                selectedLyricsTag = selectedLyricsTag,
+                                selectedLyricsTag = selectedLyricsOption?.tag,
                                 overlayVisibility = uiState.overlayVisibility,
                                 onBack = { uiManager.back() },
                                 onEnableLyricsViewAutoScroll = { lyricsViewAutoScroll = true },
@@ -448,7 +444,8 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                     hideOverlay = false
                                 },
                                 onSelectLyricsTag = { tag ->
-                                    uiManager.playerScreenSelectedLyricsTag.update { tag }
+                                    availableLyrics.find { it.tag == tag }
+                                        ?.let { viewModel.selectLyrics(it) }
                                 },
                             )
                         }

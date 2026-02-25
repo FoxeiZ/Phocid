@@ -137,7 +137,6 @@ class UiManager(
     val playerScreenQueueDragLock = DragLock()
 
     val playerScreenUseLyricsView = MutableStateFlow(false)
-    val playerScreenSelectedLyricsTag = MutableStateFlow(null as String?)
 
     val playerScreenUseCountdown = MutableStateFlow(false)
 

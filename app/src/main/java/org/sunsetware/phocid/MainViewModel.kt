@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.sunsetware.phocid.data.HistoryClearRange
 import org.sunsetware.phocid.data.HistoryList
+import org.sunsetware.phocid.data.LyricsOption
 import org.sunsetware.phocid.data.PlayerManager
 import org.sunsetware.phocid.data.Preferences
 import org.sunsetware.phocid.data.cutoffMillis
@@ -54,6 +55,12 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
 
     val playlistManager
         get() = GlobalData.playlistManager
+
+    val selectedLyricsOption = MutableStateFlow(null as LyricsOption?)
+
+    fun selectLyrics(option: LyricsOption) {
+        selectedLyricsOption.update { option }
+    }
 
     val carouselArtworkCache = ArtworkCache(viewModelScope, 4)
     val playlistIoDirectory = MutableStateFlow(null as Uri?)
@@ -87,6 +94,17 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
                     )
                 playerManager.initialize(application.applicationContext)
                 _initialized.update { true }
+                // Reset lyrics selection whenever the current track changes
+                launch {
+                    var lastTrackId: Long? = null
+                    playerManager.state.collect { state ->
+                        val currentId = state.actualPlayQueue.getOrNull(state.currentIndex)
+                        if (currentId != lastTrackId) {
+                            lastTrackId = currentId
+                            selectedLyricsOption.update { null }
+                        }
+                    }
+                }
             }
         }
     }
