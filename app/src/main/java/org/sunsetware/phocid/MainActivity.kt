@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntOffset
 import androidx.core.os.LocaleListCompat
@@ -62,6 +64,7 @@ import org.sunsetware.phocid.data.sorted
 import org.sunsetware.phocid.globals.Strings
 import org.sunsetware.phocid.globals.SystemLocale
 import org.sunsetware.phocid.ui.components.AnimatedForwardBackwardTransition
+import org.sunsetware.phocid.ui.components.BinaryDragState
 import org.sunsetware.phocid.ui.components.DragLock
 import org.sunsetware.phocid.ui.theme.PhocidTheme
 import org.sunsetware.phocid.ui.views.PermissionRequestDialog
@@ -127,6 +130,9 @@ class MainActivity : ComponentActivity(), IntentLauncher {
                 val playerScreenOpenDragLock = remember { DragLock() }
                 val playerScreenCloseDragLock = remember { DragLock() }
                 val playerScreenDragState = uiManager.playerScreenDragState
+                val playerScreenTarget by
+                    uiManager.playerScreenDragState.targetValue
+                        .collectAsStateWithLifecycle()
 
                 val overrideStatusBarLightColor by
                     uiManager.overrideStatusBarLightColor.collectAsStateWithLifecycle()
@@ -210,35 +216,14 @@ class MainActivity : ComponentActivity(), IntentLauncher {
                                     LibraryScreen(
                                         playerScreenOpenDragLock,
                                         isObscured =
-                                            playerScreenDragState.position == 1f ||
+                                            (playerScreenTarget == 1f) ||
                                                 topLevelScreenStack.isNotEmpty(),
                                     )
 
-                                    if (playerScreenDragState.position > 0) {
-                                        val scrimColor = MaterialTheme.colorScheme.scrim
-                                        Box(
-                                            modifier =
-                                                Modifier.fillMaxSize().drawBehind {
-                                                    drawRect(
-                                                        scrimColor,
-                                                        alpha = playerScreenDragState.position,
-                                                    )
-                                                }
-                                        )
-                                        Box(
-                                            modifier =
-                                                Modifier.offset {
-                                                    IntOffset(
-                                                        0,
-                                                        ((1 - playerScreenDragState.position) *
-                                                                playerScreenDragState.length)
-                                                            .roundToIntOrZero(),
-                                                    )
-                                                }
-                                        ) {
-                                            PlayerScreen(playerScreenCloseDragLock)
-                                        }
-                                    }
+                                    PlayerScreenOverlay(
+                                        playerScreenDragState = playerScreenDragState,
+                                        playerScreenCloseDragLock = playerScreenCloseDragLock,
+                                    )
                                 }
                                 else -> screen.Compose(viewModel)
                             }
@@ -424,5 +409,28 @@ class MainActivity : ComponentActivity(), IntentLauncher {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PlayerScreenOverlay(
+    playerScreenDragState: BinaryDragState,
+    playerScreenCloseDragLock: DragLock,
+) {
+    val scrimColor = MaterialTheme.colorScheme.scrim
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .graphicsLayer { alpha = playerScreenDragState.position }
+                .drawBehind { drawRect(scrimColor) }
+    )
+    Box(
+        modifier =
+            Modifier.graphicsLayer {
+                val pos = playerScreenDragState.position
+                translationY = (1f - pos) * playerScreenDragState.length
+            }
+    ) {
+        PlayerScreen(playerScreenCloseDragLock)
     }
 }
