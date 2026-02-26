@@ -18,7 +18,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntOffset
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
@@ -72,7 +70,6 @@ import org.sunsetware.phocid.ui.views.library.LibraryScreen
 import org.sunsetware.phocid.ui.views.library.LibraryScreenTabType
 import org.sunsetware.phocid.ui.views.player.PlayerScreen
 import org.sunsetware.phocid.utils.combine
-import org.sunsetware.phocid.utils.roundToIntOrZero
 import org.sunsetware.phocid.utils.trimAndNormalize
 
 class MainActivity : ComponentActivity(), IntentLauncher {
@@ -131,8 +128,7 @@ class MainActivity : ComponentActivity(), IntentLauncher {
                 val playerScreenCloseDragLock = remember { DragLock() }
                 val playerScreenDragState = uiManager.playerScreenDragState
                 val playerScreenTarget by
-                    uiManager.playerScreenDragState.targetValue
-                        .collectAsStateWithLifecycle()
+                    uiManager.playerScreenDragState.targetValue.collectAsStateWithLifecycle()
 
                 val overrideStatusBarLightColor by
                     uiManager.overrideStatusBarLightColor.collectAsStateWithLifecycle()

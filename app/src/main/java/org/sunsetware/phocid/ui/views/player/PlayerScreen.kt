@@ -127,15 +127,17 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
     val currentTrackLyrics =
         remember(currentTrack, selectedLyricsOption) {
             val effectiveOption =
-                selectedLyricsOption
-                    ?.let { sel -> availableLyrics.find { it.tag == sel.tag } }
+                selectedLyricsOption?.let { sel -> availableLyrics.find { it.tag == sel.tag } }
                     ?: availableLyrics.firstOrNull()
             if (effectiveOption != null) {
-                when (val result = loadLyricsFromOption(
-                    effectiveOption,
-                    currentTrack.unsyncedLyrics,
-                    preferences.charsetName,
-                )) {
+                when (
+                    val result =
+                        loadLyricsFromOption(
+                            effectiveOption,
+                            currentTrack.unsyncedLyrics,
+                            preferences.charsetName,
+                        )
+                ) {
                     is LyricsLoadResult.Synced -> PlayerScreenLyrics.Synced(result.value)
                     is LyricsLoadResult.Unsynced -> PlayerScreenLyrics.Unsynced(result.value)
                     null -> null
@@ -418,7 +420,8 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                     hideOverlay = false
                                 },
                                 onSelectLyricsTag = { tag ->
-                                    availableLyrics.find { it.tag == tag }
+                                    availableLyrics
+                                        .find { it.tag == tag }
                                         ?.let { viewModel.selectLyrics(it) }
                                 },
                             )
@@ -444,7 +447,8 @@ fun PlayerScreen(dragLock: DragLock, viewModel: MainViewModel = viewModel()) {
                                     hideOverlay = false
                                 },
                                 onSelectLyricsTag = { tag ->
-                                    availableLyrics.find { it.tag == tag }
+                                    availableLyrics
+                                        .find { it.tag == tag }
                                         ?.let { viewModel.selectLyrics(it) }
                                 },
                             )

@@ -178,9 +178,7 @@ object PlayerScreenLyricsViewDefault : PlayerScreenLyricsView() {
                                         style = textStyle,
                                         modifier =
                                             Modifier.fillMaxWidth()
-                                                .clickable {
-                                                    onSeek(timestamp.inWholeMilliseconds)
-                                                }
+                                                .clickable { onSeek(timestamp.inWholeMilliseconds) }
                                                 .alpha(alpha),
                                     )
                                 }

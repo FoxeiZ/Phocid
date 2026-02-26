@@ -316,56 +316,56 @@ fun scanAvailableLyrics(track: Track): List<LyricsOption> {
         if (!track.unsyncedLyrics.isNullOrEmpty())
             listOf(LyricsOption(tag = LYRICS_OPTION_EMBEDDED_TAG, filePath = "", extension = ""))
         else emptyList()
-    val externalOptions = try {
-        val baseName = FilenameUtils.getBaseName(track.path)
-        val dir = File(FilenameUtils.getFullPath(track.path))
-        val files = dir.listFiles() ?: emptyArray()
-        val prefix = "$baseName."
-        files
-            .filter { file ->
-                val ext = file.extension.lowercase()
-                (ext == "lrc" || ext == "txt") &&
-                    file.name.startsWith(prefix, ignoreCase = true)
-            }
-            .map { file ->
-                val ext = file.extension
-                val withoutPrefix = file.name.substring(prefix.length)
-                val tag =
-                    if (withoutPrefix.equals(ext, ignoreCase = true)) {
-                        "Standard"
-                    } else {
-                        withoutPrefix
-                            .removeSuffix(".$ext")
-                            .ifEmpty { "Standard" }
-                    }
-                LyricsOption(
-                    tag = tag,
-                    filePath = file.absolutePath,
-                    extension = ext.lowercase(),
-                )
-            }
-            .sortedBy { it.tag }
-    } catch (ex: Exception) {
-        Log.e("Phocid", "scanAvailableLyrics: can't scan lyrics for ${track.path}", ex)
-        emptyList()
-    }
+    val externalOptions =
+        try {
+            val baseName = FilenameUtils.getBaseName(track.path)
+            val dir = File(FilenameUtils.getFullPath(track.path))
+            val files = dir.listFiles() ?: emptyArray()
+            val prefix = "$baseName."
+            files
+                .filter { file ->
+                    val ext = file.extension.lowercase()
+                    (ext == "lrc" || ext == "txt") &&
+                        file.name.startsWith(prefix, ignoreCase = true)
+                }
+                .map { file ->
+                    val ext = file.extension
+                    val withoutPrefix = file.name.substring(prefix.length)
+                    val tag =
+                        if (withoutPrefix.equals(ext, ignoreCase = true)) {
+                            "Standard"
+                        } else {
+                            withoutPrefix.removeSuffix(".$ext").ifEmpty { "Standard" }
+                        }
+                    LyricsOption(
+                        tag = tag,
+                        filePath = file.absolutePath,
+                        extension = ext.lowercase(),
+                    )
+                }
+                .sortedBy { it.tag }
+        } catch (ex: Exception) {
+            Log.e("Phocid", "scanAvailableLyrics: can't scan lyrics for ${track.path}", ex)
+            emptyList()
+        }
     return embeddedOption + externalOptions
 }
 
-fun loadLyricsFromOption(option: LyricsOption, unsyncedLyrics: String?, charsetName: String?): LyricsLoadResult? {
+fun loadLyricsFromOption(
+    option: LyricsOption,
+    unsyncedLyrics: String?,
+    charsetName: String?,
+): LyricsLoadResult? {
     if (option.isEmbedded) {
         return unsyncedLyrics?.let { lyrics ->
-            parseLrc(lyrics)
-                .takeIf { it.lines.isNotEmpty() }
-                ?.let { LyricsLoadResult.Synced(it) }
+            parseLrc(lyrics).takeIf { it.lines.isNotEmpty() }?.let { LyricsLoadResult.Synced(it) }
                 ?: LyricsLoadResult.Unsynced(lyrics)
         }
     }
     return try {
-        val rawLines = File(option.filePath).readBytes().decodeWithCharsetName(charsetName).trimAndNormalize()
-        parseLrc(rawLines)
-            .takeIf { it.lines.isNotEmpty() }
-            ?.let { LyricsLoadResult.Synced(it) }
+        val rawLines =
+            File(option.filePath).readBytes().decodeWithCharsetName(charsetName).trimAndNormalize()
+        parseLrc(rawLines).takeIf { it.lines.isNotEmpty() }?.let { LyricsLoadResult.Synced(it) }
             ?: LyricsLoadResult.Unsynced(rawLines)
     } catch (ex: Exception) {
         Log.e("Phocid", "loadLyricsFromOption: can't load lyrics from ${option.filePath}", ex)

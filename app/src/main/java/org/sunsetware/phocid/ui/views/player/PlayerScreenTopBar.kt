@@ -157,11 +157,7 @@ object PlayerScreenTopBarDefaultOverlay : PlayerScreenTopBar() {
                         ) {
                             availableLyrics.forEach { option ->
                                 DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "${option.tag} (.${option.extension})",
-                                        )
-                                    },
+                                    text = { Text("${option.tag} (.${option.extension})") },
                                     onClick = {
                                         onSelectLyricsTag(option.tag)
                                         lyricsDropdownExpanded = false
@@ -256,11 +252,7 @@ object PlayerScreenTopBarDefaultStandalone : PlayerScreenTopBar() {
                         ) {
                             availableLyrics.forEach { option ->
                                 DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "${option.tag} (.${option.extension})",
-                                        )
-                                    },
+                                    text = { Text("${option.tag} (.${option.extension})") },
                                     onClick = {
                                         onSelectLyricsTag(option.tag)
                                         lyricsDropdownExpanded = false
