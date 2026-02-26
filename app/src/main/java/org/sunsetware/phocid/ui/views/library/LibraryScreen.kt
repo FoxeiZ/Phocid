@@ -90,7 +90,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -799,7 +798,6 @@ private fun BottomBar(
     playerScreenDragLock: DragLock,
     isObscured: Boolean,
 ) {
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
@@ -943,6 +941,7 @@ private fun BottomBar(
                                         modifier = Modifier.fillMaxSize(),
                                     )
                                 },
+                                leadSize = 48.dp,
                                 actions = {},
                                 modifier = Modifier.fillMaxHeight(),
                                 marquee = true,

@@ -12,12 +12,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DragHandle
@@ -59,6 +61,8 @@ inline fun LibraryListItemHorizontal(
     crossinline actions: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     itemHeight: Dp = 72.dp,
+    leadSize: Dp = 40.dp,
+    dragIndicatorOffset: Dp = 28.dp,
     deemphasized: Boolean = false,
     marquee: Boolean = false,
     selected: Boolean = false,
@@ -82,7 +86,7 @@ inline fun LibraryListItemHorizontal(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides supportingContentColor) {
-            Box(modifier = Modifier.padding(end = 16.dp).size(40.dp)) {
+            Box(modifier = Modifier.size(leadSize)) {
                 androidx.compose.animation.AnimatedVisibility(
                     dragIndicator,
                     enter = fadeIn(emphasizedStandard()),
@@ -90,7 +94,7 @@ inline fun LibraryListItemHorizontal(
                     modifier =
                         Modifier.align(Alignment.CenterStart).graphicsLayer {
                             translationX =
-                                -28.dp.toPx() *
+                                -dragIndicatorOffset.toPx() *
                                     (if (layoutDirection == LayoutDirection.Ltr) 1 else -1)
                         },
                 ) {
@@ -118,6 +122,9 @@ inline fun LibraryListItemHorizontal(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             AnimatedContent(
                 targetState = title,
