@@ -812,6 +812,7 @@ data class LibraryScreenHomeViewTabState(
 fun LibraryScreenHomeView(
     state: LibraryScreenHomeViewState,
     viewModel: MainViewModel = viewModel(),
+    artworkSize: Int = 40,
 ) {
     val preferences by viewModel.preferences.collectAsStateWithLifecycle()
 
@@ -838,6 +839,7 @@ fun LibraryScreenHomeView(
                         alwaysShowHintOnScroll = preferences.alwaysShowHintOnScroll,
                         alwaysShowScrollbar = preferences.alwaysShowScrollbar,
                         scrollbarWidthDp = preferences.scrollbarWidthDp,
+                        artworkSize = artworkSize,
                     )
                 } else {
                     // Not providing a composable will cause internal crash in pager
@@ -949,6 +951,7 @@ private fun LibraryList(
     alwaysShowHintOnScroll: Boolean,
     alwaysShowScrollbar: Boolean,
     scrollbarWidthDp: Float,
+    artworkSize: Int = 40,
 ) {
     val viewModel = viewModel<MainViewModel>()
     val haptics = LocalHapticFeedback.current
@@ -986,6 +989,7 @@ private fun LibraryList(
                                     suppressLoading = isScrollbarThumbDragging,
                                 )
                             },
+                            leadSize = artworkSize.dp,
                             actions = { OverflowMenu(menuItems(viewModel), state = menuState) },
                             modifier =
                                 Modifier.multiSelectClickable(
@@ -1072,6 +1076,7 @@ private fun LibraryList(
 data class LibraryScreenTabInfo(
     val type: LibraryScreenTabType,
     val gridSize: Int = 0,
+    val artworkSize: Int = 40,
     val sortingOptionId: String = type.sortingOptions.keys.first(),
     val sortAscending: Boolean = true,
 ) {

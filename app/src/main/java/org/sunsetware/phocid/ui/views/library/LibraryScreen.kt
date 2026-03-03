@@ -133,6 +133,7 @@ import org.sunsetware.phocid.ui.components.LifecycleLaunchedEffect
 import org.sunsetware.phocid.ui.components.MultiSelectManager
 import org.sunsetware.phocid.ui.components.OverflowMenu
 import org.sunsetware.phocid.ui.components.SingleLineText
+import org.sunsetware.phocid.ui.components.SliderWithInput
 import org.sunsetware.phocid.ui.components.SortingOptionPicker
 import org.sunsetware.phocid.ui.components.TrackCarousel
 import org.sunsetware.phocid.ui.components.negativePadding
@@ -254,9 +255,10 @@ fun LibraryScreen(
                             uiManager,
                         ) +
                         (currentCollection.info.value?.extraCollectionMenuItems(viewModel)
-                            ?: emptyList<MenuItem>()) +
+                            ?: emptyList()) +
                         MenuItem.Divider
                 }
+
                 currentHomeTab.type == LibraryScreenTabType.PLAYLISTS ->
                     listOf(
                         MenuItem.Button(Strings[R.string.playlist_new], Icons.Filled.AddBox) {
@@ -429,7 +431,7 @@ fun LibraryScreen(
         ) {
             AnimatedForwardBackwardTransition(collectionViewStack) { animatedCollectionViewState ->
                 if (animatedCollectionViewState == null) {
-                    LibraryScreenHomeView(homeViewState)
+                    LibraryScreenHomeView(homeViewState, artworkSize = currentHomeTab.artworkSize)
                 } else {
                     LibraryScreenCollectionView(animatedCollectionViewState)
                 }
@@ -555,6 +557,10 @@ fun LibraryScreen(
         maxGridSize = maxGridSize,
         onSetGridSize = { gridSize ->
             viewModel.updateTabInfo(currentHomeTabIndex) { it.copy(gridSize = gridSize) }
+        },
+        artworkSize = if (currentCollection == null) currentHomeTab.artworkSize else null,
+        onSetArtworkSize = { artworkSize ->
+            viewModel.updateTabInfo(currentHomeTabIndex) { it.copy(artworkSize = artworkSize) }
         },
     )
 }
@@ -1013,6 +1019,8 @@ private inline fun ViewSettings(
     gridSize: Int? = null,
     maxGridSize: Int = 0,
     crossinline onSetGridSize: (Int) -> Unit = {},
+    artworkSize: Int? = null,
+    crossinline onSetArtworkSize: (Int) -> Unit = {},
 ) {
     AnimatedVisibility(
         visibility,
@@ -1035,6 +1043,21 @@ private inline fun ViewSettings(
                         valueRange = 0f..maxGridSize.toFloat(),
                         steps = (maxGridSize - 1).coerceAtLeast(0),
                         onValueChange = { onSetGridSize(it.roundToIntOrZero()) },
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                if (artworkSize != null && gridSize != null && gridSize == 0) {
+                    SliderWithInput(
+                        label = Strings[R.string.view_settings_artwork_size],
+                        value = artworkSize,
+                        min = 24,
+                        max = 64,
+                        onSliderChange = { onSetArtworkSize(it) },
+                        onApply = { onSetArtworkSize(it) },
+                        numberFormatter = { "${it}dp" },
+                        steps = 4,
+                        isValid = { it > 0 },
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
