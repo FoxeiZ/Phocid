@@ -407,6 +407,7 @@
     <string name="track_view_artist">View artist “{0}”</string>
     <!-- Settings of how the list is displayed. Unrelated to "view album" etc. -->
     <string name="view_settings">View settings</string>
+    <string name="view_settings_artwork_size">Artwork size</string>
     <string name="view_settings_grid_size">Grid size</string>
     <string name="view_settings_sort_by">Sort by</string>
     <string name="preferences_radio">Radio</string>
