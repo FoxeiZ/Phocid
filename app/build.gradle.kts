@@ -29,13 +29,13 @@ android {
             initWith(getByName("release"))
             matchingFallbacks += listOf("release")
 
-            //            isMinifyEnabled = true
             isProfileable = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("debug")
+            isCrunchPngs = false
         }
         release {
             isShrinkResources = true
